@@ -12,7 +12,7 @@ module.exports = async function (req, res) {
   const supabaseUrl = 'xwhejuvgqfwbwpakxktx.supabase.co';
   if (!serviceKey) { res.status(500).json({ error: 'Server config missing' }); return; }
 
-  const { full_name, email, phone } = req.body;
+  const { full_name, email, phone, address } = req.body;
   if (!full_name) { res.status(400).json({ error: 'full_name is required' }); return; }
 
   const tempPassword = 'PCHome2026!';
@@ -33,7 +33,7 @@ module.exports = async function (req, res) {
   await delay(800);
 
   await supabaseRequest(supabaseUrl, serviceKey, 'POST', '/rest/v1/profiles', {
-    id: userId, full_name, role: 'caregiver', phone: phone || null,
+    id: userId, full_name, role: 'caregiver', phone: phone || null, address: address || null,
   }, { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
 
   res.status(200).json({ success: true, email: caregiverEmail, temp_password: tempPassword, id: userId });

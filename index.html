@@ -1074,6 +1074,7 @@
                 </select></div>
               </div>
               <div class="db-form-group"><label>CPR Expiration Date</label><input type="date" id="newCgCpr" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+              <div class="db-form-group"><label>Home Address <span style="font-size:0.8rem;color:#888;">(used for distance matching)</span></label><input type="text" id="newCgAddress" placeholder="e.g. 123 Main St, Fairfax VA 22030" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
               <div class="db-form-group"><label>Notes</label><textarea id="newCgNotes" placeholder="Any additional notes..." style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;height:80px;resize:vertical;"></textarea></div>
               <div style="display:flex;gap:1rem;margin-top:1rem;">
                 <button onclick="closeAddCaregiverModal()" style="flex:1;padding:0.85rem;border:1.5px solid #ccc;border-radius:10px;background:white;cursor:pointer;font-size:1rem;">Cancel</button>
@@ -1088,8 +1089,13 @@
             <div class="db-card-header"><span class="db-card-title">Assign / Create Visit</span></div>
             <div class="db-form">
               <div class="db-form-row">
-                <div class="db-form-group"><label>Client</label><select id="scheduleClient"><option value="">Loading clients...</option></select></div>
+                <div class="db-form-group"><label>Client</label><select id="scheduleClient" onchange="runSmartMatch()"><option value="">Loading clients...</option></select></div>
                 <div class="db-form-group"><label>Caregiver</label><select id="scheduleCaregiver"><option value="">Loading caregivers...</option></select></div>
+              </div>
+              <!-- Smart Match Results -->
+              <div id="smartMatchBox" style="display:none;background:#f0f8f4;border:1.5px solid #c9e6d4;border-radius:12px;padding:1rem;margin-bottom:0.75rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;"><span style="font-size:1rem;">📍</span><strong style="font-size:0.9rem;color:#2d6a4f;">Closest Caregivers to this Client</strong><span id="smartMatchStatus" style="font-size:0.78rem;color:#888;margin-left:auto;"></span></div>
+                <div id="smartMatchList" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
               </div>
               <div class="db-form-row">
                 <div class="db-form-group"><label>Date</label><input type="date" id="scheduleDate" /></div>
@@ -2194,6 +2200,121 @@
       await loadVisits();
     }
 
+    // Geocoding cache to avoid re-requesting the same address
+    const geoCache = {};
+
+    async function geocode(address) {
+      if (!address) return null;
+      const key = address.trim().toLowerCase();
+      if (geoCache[key]) return geoCache[key];
+      try {
+        const res = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(address) + '&format=json&limit=1&countrycodes=us', { headers: { 'User-Agent': 'PCHomecareScheduler/1.0' } });
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+          geoCache[key] = coords;
+          return coords;
+        }
+      } catch(e) {}
+      return null;
+    }
+
+    function haversineDistance(lat1, lng1, lat2, lng2) {
+      const R = 3958.8; // miles
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    async function runSmartMatch() {
+      const clientSel = document.getElementById('scheduleClient');
+      const box = document.getElementById('smartMatchBox');
+      const list = document.getElementById('smartMatchList');
+      const status = document.getElementById('smartMatchStatus');
+      const clientId = clientSel.value;
+      if (!clientId) { box.style.display = 'none'; return; }
+
+      box.style.display = 'block';
+      list.innerHTML = '<div style="color:#888;font-size:0.85rem;">Calculating distances...</div>';
+      status.textContent = '';
+
+      // Get client address
+      const { data: clientData } = await db.from('clients').select('full_name, address, lat, lng').eq('id', clientId).single();
+      if (!clientData || !clientData.address) {
+        list.innerHTML = '<div style="color:#888;font-size:0.85rem;">No address on file for this client. Add one in Client Management.</div>';
+        return;
+      }
+
+      // Geocode client if not cached
+      let clientCoords = clientData.lat && clientData.lng ? { lat: clientData.lat, lng: clientData.lng } : await geocode(clientData.address);
+      if (clientCoords && (!clientData.lat || !clientData.lng)) {
+        await db.from('clients').update({ lat: clientCoords.lat, lng: clientCoords.lng }).eq('id', clientId);
+      }
+
+      if (!clientCoords) {
+        list.innerHTML = '<div style="color:#c0392b;font-size:0.85rem;">Could not geocode client address. Check the address is valid.</div>';
+        return;
+      }
+
+      // Get all caregivers with addresses
+      const { data: caregivers } = await db.from('profiles').select('id, full_name, address, lat, lng').eq('role', 'caregiver');
+      if (!caregivers || caregivers.length === 0) {
+        list.innerHTML = '<div style="color:#888;font-size:0.85rem;">No caregivers found.</div>';
+        return;
+      }
+
+      // Geocode caregivers and calculate distances
+      const results = [];
+      for (const cg of caregivers) {
+        let coords = cg.lat && cg.lng ? { lat: cg.lat, lng: cg.lng } : null;
+        if (!coords && cg.address) {
+          await new Promise(r => setTimeout(r, 300)); // Nominatim rate limit
+          coords = await geocode(cg.address);
+          if (coords) await db.from('profiles').update({ lat: coords.lat, lng: coords.lng }).eq('id', cg.id);
+        }
+        const distance = coords ? haversineDistance(clientCoords.lat, clientCoords.lng, coords.lat, coords.lng) : null;
+        results.push({ ...cg, distance });
+      }
+
+      // Sort: caregivers with distance first, then by distance
+      results.sort((a, b) => {
+        if (a.distance === null && b.distance === null) return 0;
+        if (a.distance === null) return 1;
+        if (b.distance === null) return -1;
+        return a.distance - b.distance;
+      });
+
+      const withDist = results.filter(r => r.distance !== null);
+      const withoutDist = results.filter(r => r.distance === null);
+      status.textContent = withDist.length + ' of ' + results.length + ' caregivers matched';
+
+      list.innerHTML = '';
+      results.forEach((cg, i) => {
+        const distStr = cg.distance !== null ? cg.distance.toFixed(1) + ' mi away' : 'No address on file';
+        const isClosest = i === 0 && cg.distance !== null;
+        const color = isClosest ? '#1a7340' : cg.distance < 5 ? '#2d6a4f' : cg.distance < 15 ? '#555' : '#888';
+        const badge = isClosest ? '<span style="background:#1a7340;color:white;border-radius:4px;padding:0.1rem 0.4rem;font-size:0.7rem;margin-left:0.4rem;">⭐ Closest</span>' : cg.distance !== null && cg.distance < 5 ? '<span style="background:#d4edda;color:#155724;border-radius:4px;padding:0.1rem 0.4rem;font-size:0.7rem;margin-left:0.4rem;">Nearby</span>' : '';
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.75rem;background:white;border-radius:8px;border:1px solid #e8eaed;';
+        row.innerHTML = '<div><span style="font-weight:600;font-size:0.88rem;color:#333;">' + cg.full_name + '</span>' + badge + '<div style="font-size:0.78rem;color:' + color + ';margin-top:0.1rem;">📍 ' + distStr + '</div></div><button onclick="selectCaregiver(\'' + cg.id + '\',\'' + cg.full_name.replace(/'/g,"\\'")+  '\')" style="padding:0.3rem 0.75rem;background:#0D2B1F;color:#C9A84C;border:none;border-radius:6px;cursor:pointer;font-size:0.78rem;font-weight:600;">Select</button>';
+        list.appendChild(row);
+      });
+    }
+
+    function selectCaregiver(id, name) {
+      const sel = document.getElementById('scheduleCaregiver');
+      // Find or add the option
+      let found = false;
+      for (const opt of sel.options) { if (opt.value === id) { sel.value = id; found = true; break; } }
+      if (!found) {
+        const opt = new Option(name, id);
+        sel.appendChild(opt);
+        sel.value = id;
+      }
+      document.getElementById('smartMatchBox').style.display = 'none';
+    }
+
     function timeToMins(t) {
       if (!t) return 0;
       const [h, m] = t.slice(0,5).split(':');
@@ -2372,11 +2493,12 @@
       const email = document.getElementById('newCgEmail').value.trim();
       const phone = document.getElementById('newCgPhone').value.trim();
       const cert = document.getElementById('newCgCert').value;
+      const address = document.getElementById('newCgAddress').value.trim();
       try {
         const res = await fetch('/api/add-caregiver', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ full_name: name, email: email || null, phone: phone || null, certification: cert }),
+          body: JSON.stringify({ full_name: name, email: email || null, phone: phone || null, certification: cert, address: address || null }),
         });
         const data = await res.json();
         if (!res.ok) { alert('Error saving caregiver: ' + (data.error || 'Unknown error')); return; }
