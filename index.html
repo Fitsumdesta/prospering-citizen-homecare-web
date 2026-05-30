@@ -951,42 +951,32 @@
       </div>
       <div class="db-content">
         <div class="db-panel active" id="m-overview">
-          <div class="db-page-title">Good morning, Admin 🌿</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem;">
+            <div class="db-page-title" id="dashGreeting">Good morning, Admin 🌿</div>
+            <span id="dashLastUpdated" style="font-size:0.75rem;color:#aaa;"></span>
+          </div>
           <div class="db-page-sub">Here's what's happening at Prospering Citizen Homecare today.</div>
           <div class="db-stats">
-            <div class="db-stat-card"><div class="db-stat-icon">👥</div><div class="db-stat-val">47</div><div class="db-stat-label">Active Clients</div><div class="db-stat-change up">↑ 3 this week</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">🧑‍⚕️</div><div class="db-stat-val">18</div><div class="db-stat-label">Active Caregivers</div><div class="db-stat-change up">↑ 1 new hire</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">📅</div><div class="db-stat-val">63</div><div class="db-stat-label">Visits Today</div><div class="db-stat-change down">↓ 2 cancelled</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">💰</div><div class="db-stat-val">$42k</div><div class="db-stat-label">Revenue This Month</div><div class="db-stat-change up">↑ 8%</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">👥</div><div class="db-stat-val" id="statClients">—</div><div class="db-stat-label">Active Clients</div><div class="db-stat-change" id="statClientsChange"></div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">🧑‍⚕️</div><div class="db-stat-val" id="statCaregivers">—</div><div class="db-stat-label">Active Caregivers</div><div class="db-stat-change" id="statCaregiversChange"></div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">📅</div><div class="db-stat-val" id="statVisitsToday">—</div><div class="db-stat-label">Visits Today</div><div class="db-stat-change" id="statVisitsTodayChange"></div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">📋</div><div class="db-stat-val" id="statVisitsMonth">—</div><div class="db-stat-label">Visits This Month</div><div class="db-stat-change" id="statVisitsMonthChange"></div></div>
           </div>
           <div class="db-grid-2">
             <div class="db-card">
-              <div class="db-card-header"><span class="db-card-title">Today's Schedule</span></div>
-              <div class="schedule-list">
-                <div class="schedule-item"><span class="sched-time">8:00 AM</span><div class="sched-dot green"></div><div class="sched-info"><div class="sched-title">Maria S. → Dorothy R.</div><div class="sched-sub">Personal Care · 3hrs · Fairfax</div></div></div>
-                <div class="schedule-item"><span class="sched-time">9:30 AM</span><div class="sched-dot green"></div><div class="sched-info"><div class="sched-title">James T. → Robert M.</div><div class="sched-sub">Companion · 2hrs · Arlington</div></div></div>
-                <div class="schedule-item"><span class="sched-time">11:00 AM</span><div class="sched-dot gold"></div><div class="sched-info"><div class="sched-title">Angela W. → Susan P.</div><div class="sched-sub">Dementia Care · 4hrs · Alexandria</div></div></div>
-                <div class="schedule-item"><span class="sched-time">2:00 PM</span><div class="sched-dot red"></div><div class="sched-info"><div class="sched-title">John B. → Frank L. — CANCELLED</div><div class="sched-sub">Needs reassignment</div></div></div>
-              </div>
+              <div class="db-card-header"><span class="db-card-title">Today's Schedule</span><span id="todayDate" style="font-size:0.8rem;color:#888;"></span></div>
+              <div class="schedule-list" id="dashTodaySchedule"><div style="padding:1rem;color:#888;font-size:0.85rem;">Loading...</div></div>
             </div>
             <div class="db-card">
-              <div class="db-card-header"><span class="db-card-title">Recent Alerts</span><span class="badge badge-red">3 urgent</span></div>
-              <div class="alert-item"><span class="alert-icon">🚨</span><div><div class="alert-text">Caregiver John B. called out sick — 2:00 PM unassigned</div><div class="alert-time">35 min ago</div></div></div>
-              <div class="alert-item"><span class="alert-icon">⚠️</span><div><div class="alert-text">Dorothy R.'s care plan expires in 3 days</div><div class="alert-time">2 hrs ago</div></div></div>
-              <div class="alert-item"><span class="alert-icon">📋</span><div><div class="alert-text">Angela W.'s CPR certification expires this month</div><div class="alert-time">Today</div></div></div>
-              <div class="alert-item"><span class="alert-icon">💬</span><div><div class="alert-text">New message from family of Susan P.</div><div class="alert-time">4 hrs ago</div></div></div>
+              <div class="db-card-header"><span class="db-card-title">🔔 Live Alerts</span><span id="alertsBadge" class="badge badge-red" style="display:none;"></span></div>
+              <div id="dashAlerts"><div style="padding:1rem;color:#888;font-size:0.85rem;">Loading...</div></div>
             </div>
           </div>
           <div class="db-card">
-            <div class="db-card-header"><span class="db-card-title">Caregiver Utilization</span></div>
+            <div class="db-card-header"><span class="db-card-title">Caregiver Utilization — This Month</span></div>
             <table class="db-table">
-              <thead><tr><th>Caregiver</th><th>Hours</th><th>Utilization</th><th>Status</th></tr></thead>
-              <tbody>
-                <tr><td>Maria Santos</td><td>38 hrs</td><td><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:95%"></div></div></td><td><span class="badge badge-green">Active</span></td></tr>
-                <tr><td>James Thompson</td><td>32 hrs</td><td><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:80%"></div></div></td><td><span class="badge badge-green">Active</span></td></tr>
-                <tr><td>Angela Williams</td><td>28 hrs</td><td><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:70%"></div></div></td><td><span class="badge badge-green">Active</span></td></tr>
-                <tr><td>John Brown</td><td>0 hrs</td><td><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:0%"></div></div></td><td><span class="badge badge-red">Sick</span></td></tr>
-              </tbody>
+              <thead><tr><th>Caregiver</th><th>Visits</th><th>Est. Hours</th><th>Utilization</th><th>Status</th></tr></thead>
+              <tbody id="dashUtilization"><tr><td colspan="5" style="text-align:center;color:#888;">Loading...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -2238,6 +2228,106 @@
       await loadVisits();
     }
 
+    // ── Real-time Dashboard ──
+    let realtimeChannel = null;
+
+    async function loadDashboard() {
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0,10);
+      const monthStart = todayStr.slice(0,7) + '-01';
+      const hour = today.getHours();
+      const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+      const el = document.getElementById('dashGreeting');
+      if (el) el.textContent = greeting + ', Admin 🌿';
+      const dateEl = document.getElementById('todayDate');
+      if (dateEl) dateEl.textContent = today.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+      const upd = document.getElementById('dashLastUpdated');
+      if (upd) upd.textContent = 'Updated ' + today.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+
+      // Parallel queries
+      const [clients, caregivers, visitsToday, visitsMonth, incidents] = await Promise.all([
+        db.from('clients').select('id,full_name,status', { count: 'exact' }),
+        db.from('profiles').select('id,full_name,role', { count: 'exact' }).eq('role','caregiver'),
+        db.from('visits').select('*, clients(full_name), profiles(full_name)').eq('visit_date', todayStr).order('start_time'),
+        db.from('visits').select('id,caregiver_id,duration_hours,profiles(full_name)', { count: 'exact' }).gte('visit_date', monthStart).lte('visit_date', todayStr),
+        db.from('incidents').select('*,clients(full_name)').order('created_at',{ascending:false}).limit(5),
+      ]);
+
+      // KPI stats
+      const clientCount = clients.count || 0;
+      const caregiverCount = caregivers.count || 0;
+      const visitsTodayCount = visitsToday.data?.length || 0;
+      const visitsMonthCount = visitsMonth.count || 0;
+
+      const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+      set('statClients', clientCount);
+      set('statCaregivers', caregiverCount);
+      set('statVisitsToday', visitsTodayCount);
+      set('statVisitsMonth', visitsMonthCount);
+      set('statClientsChange', clientCount > 0 ? '↑ ' + clientCount + ' total' : 'No clients yet');
+      set('statCaregiversChange', caregiverCount > 0 ? caregiverCount + ' active' : 'No caregivers yet');
+      set('statVisitsTodayChange', visitsTodayCount === 0 ? 'None scheduled today' : visitsTodayCount + ' visits');
+      set('statVisitsMonthChange', 'Month to date');
+
+      // Today's schedule
+      const schedList = document.getElementById('dashTodaySchedule');
+      if (schedList) {
+        if (!visitsToday.data || visitsToday.data.length === 0) {
+          schedList.innerHTML = '<div style="padding:1rem;color:#888;font-size:0.85rem;text-align:center;">No visits scheduled for today.</div>';
+        } else {
+          schedList.innerHTML = visitsToday.data.map(v => {
+            const status = v.status || 'scheduled';
+            const dot = status === 'completed' ? 'green' : status === 'cancelled' ? 'red' : status === 'in_progress' ? 'gold' : 'green';
+            return '<div class="schedule-item"><span class="sched-time">' + fmtTime(v.start_time) + '</span><div class="sched-dot ' + dot + '"></div><div class="sched-info"><div class="sched-title">' + (v.profiles?.full_name || 'TBD') + ' → ' + (v.clients?.full_name || 'TBD') + '</div><div class="sched-sub">' + (v.service_type||'Visit') + ' · ' + (v.duration_hours||'?') + 'hr · <span class="badge badge-' + dot + '">' + status + '</span></div></div></div>';
+          }).join('');
+        }
+      }
+
+      // Alerts — unassigned visits + recent incidents
+      const alertsEl = document.getElementById('dashAlerts');
+      const badge = document.getElementById('alertsBadge');
+      const alerts = [];
+
+      // Unassigned/cancelled visits today
+      const unassigned = visitsToday.data?.filter(v => !v.caregiver_id || v.status === 'cancelled') || [];
+      unassigned.forEach(v => alerts.push({ icon:'🚨', text: (v.clients?.full_name||'Client') + ' visit at ' + fmtTime(v.start_time) + ' needs coverage', time: 'Today', urgent: true }));
+
+      // Recent incidents
+      if (incidents.data) incidents.data.forEach(i => alerts.push({ icon:'⚠️', text: 'Incident reported for ' + (i.clients?.full_name||'client') + (i.incident_type ? ' — ' + i.incident_type : ''), time: new Date(i.created_at).toLocaleDateString(), urgent: false }));
+
+      if (alerts.length === 0) alerts.push({ icon:'✅', text: 'No active alerts — all looks good!', time: 'Now', urgent: false });
+
+      const urgentCount = alerts.filter(a => a.urgent).length;
+      if (badge) { badge.style.display = urgentCount > 0 ? '' : 'none'; badge.textContent = urgentCount + ' urgent'; }
+      if (alertsEl) alertsEl.innerHTML = alerts.map(a => '<div class="alert-item"><span class="alert-icon">' + a.icon + '</span><div><div class="alert-text">' + a.text + '</div><div class="alert-time">' + a.time + '</div></div></div>').join('');
+
+      // Caregiver utilization
+      const utilBody = document.getElementById('dashUtilization');
+      if (utilBody && caregivers.data) {
+        if (caregivers.data.length === 0) { utilBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">No caregivers added yet.</td></tr>'; }
+        else {
+          const monthVisits = visitsMonth.data || [];
+          utilBody.innerHTML = caregivers.data.map(cg => {
+            const cgVisits = monthVisits.filter(v => v.caregiver_id === cg.id);
+            const totalHrs = cgVisits.reduce((s, v) => s + (parseFloat(v.duration_hours) || 0), 0);
+            const pct = Math.min(Math.round((totalHrs / 40) * 100), 100);
+            const barColor = pct >= 90 ? '#e74c3c' : pct >= 60 ? '#4e7152' : '#c9a84c';
+            return '<tr><td>' + cg.full_name + '</td><td>' + cgVisits.length + '</td><td>' + totalHrs.toFixed(1) + ' hrs</td><td><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div></td><td><span class="badge badge-green">Active</span></td></tr>';
+          }).join('');
+        }
+      }
+    }
+
+    function startRealtime() {
+      if (realtimeChannel) return;
+      realtimeChannel = db.channel('dashboard-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'visits' }, () => { loadDashboard(); loadVisits(); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => { loadDashboard(); loadClients(); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => { loadDashboard(); loadCaregivers(); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'incidents' }, () => loadDashboard())
+        .subscribe();
+    }
+
     // Geocoding cache to avoid re-requesting the same address
     const geoCache = {};
 
@@ -2650,7 +2740,7 @@
       const dashMap = { manager:'managerDash', caregiver:'caregiverDash', client:'clientDash' };
       document.getElementById(dashMap[currentRole]).classList.add('active');
       document.body.style.overflow = 'hidden';
-      if (currentRole === 'manager') { loadClients(); loadCaregivers(); loadVisits(); }
+      if (currentRole === 'manager') { loadDashboard(); loadClients(); loadCaregivers(); loadVisits(); startRealtime(); }
     }
 
     document.getElementById('loginPassword').addEventListener('keydown', function(e) {
