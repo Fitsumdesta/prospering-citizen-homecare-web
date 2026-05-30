@@ -1119,23 +1119,18 @@
           </div>
         </div>
         <div class="db-panel" id="m-billing">
-          <div class="db-page-title">Billing &amp; Revenue</div><div class="db-page-sub">Invoices, payments, and financial overview.</div>
+          <div class="db-page-title">Billing &amp; Revenue</div><div class="db-page-sub">Visit-based revenue calculated in real-time from scheduled visits.</div>
           <div class="db-stats">
-            <div class="db-stat-card"><div class="db-stat-icon">💰</div><div class="db-stat-val">$42k</div><div class="db-stat-label">This Month</div><div class="db-stat-change up">↑ 8%</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">📄</div><div class="db-stat-val">12</div><div class="db-stat-label">Open Invoices</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">✅</div><div class="db-stat-val">38</div><div class="db-stat-label">Paid This Month</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">⏰</div><div class="db-stat-val">3</div><div class="db-stat-label">Overdue</div><div class="db-stat-change down">$2,100</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">💰</div><div class="db-stat-val" id="billTotalMonth">—</div><div class="db-stat-label">Est. Revenue This Month</div><div class="db-stat-change up" id="billTotalMonthSub"></div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">📅</div><div class="db-stat-val" id="billVisitsMonth">—</div><div class="db-stat-label">Visits This Month</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">⏱️</div><div class="db-stat-val" id="billHoursMonth">—</div><div class="db-stat-label">Total Hours</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">👥</div><div class="db-stat-val" id="billActiveClients">—</div><div class="db-stat-label">Billable Clients</div></div>
           </div>
           <div class="db-card">
-            <div class="db-card-header"><span class="db-card-title">Recent Invoices</span><button class="db-btn db-btn-primary" style="font-size:0.78rem;padding:0.4rem 0.9rem;">+ New Invoice</button></div>
+            <div class="db-card-header"><span class="db-card-title">Revenue by Client — This Month</span><button class="db-btn db-btn-outline" style="font-size:0.78rem;padding:0.4rem 0.9rem;" onclick="loadBilling()">↻ Refresh</button></div>
             <table class="db-table">
-              <thead><tr><th>Invoice #</th><th>Client</th><th>Period</th><th>Amount</th><th>Status</th></tr></thead>
-              <tbody>
-                <tr><td>#INV-2025-047</td><td>Dorothy Reynolds</td><td>May 1–15</td><td>$2,100</td><td><span class="badge badge-green">Paid</span></td></tr>
-                <tr><td>#INV-2025-048</td><td>Robert Mitchell</td><td>May 1–15</td><td>$1,440</td><td><span class="badge badge-green">Paid</span></td></tr>
-                <tr><td>#INV-2025-049</td><td>Susan Patterson</td><td>May 1–15</td><td>$2,800</td><td><span class="badge badge-gold">Pending</span></td></tr>
-                <tr><td>#INV-2025-050</td><td>Frank Lewis</td><td>May 1–15</td><td>$980</td><td><span class="badge badge-red">Overdue</span></td></tr>
-              </tbody>
+              <thead><tr><th>Client</th><th>Visits</th><th>Hours</th><th>Est. Amount (@$25/hr)</th><th>Service Type</th></tr></thead>
+              <tbody id="billingTableBody"><tr><td colspan="5" style="text-align:center;color:#888;">Loading...</td></tr></tbody>
             </table>
           </div>
           <!-- STRENGTH 5: QuickBooks Export -->
@@ -1165,7 +1160,7 @@
           </div>
         </div>
         <div class="db-panel" id="m-compliance">
-          <div class="db-page-title">Compliance &amp; Licensing</div><div class="db-page-sub">Certifications, policies, and regulatory requirements.</div>
+          <div class="db-page-title">Compliance &amp; Licensing</div><div class="db-page-sub">Real-time caregiver compliance tracking.</div>
           <div class="db-grid-2">
             <div class="db-card">
               <div class="db-card-header"><span class="db-card-title">Agency License Status</span></div>
@@ -1177,73 +1172,87 @@
               </div>
             </div>
             <div class="db-card">
-              <div class="db-card-header"><span class="db-card-title">Upcoming Expirations</span></div>
-              <div class="alert-item"><span class="alert-icon">⚠️</span><div><div class="alert-text">Angela Williams — CPR expires May 31</div><div class="alert-time">15 days remaining</div></div></div>
-              <div class="alert-item"><span class="alert-icon">⚠️</span><div><div class="alert-text">Dorothy Reynolds — Care Plan review due May 19</div><div class="alert-time">3 days remaining</div></div></div>
-              <div class="alert-item"><span class="alert-icon">📋</span><div><div class="alert-text">Annual Policy Review — Due June 30</div><div class="alert-time">45 days remaining</div></div></div>
+              <div class="db-card-header"><span class="db-card-title">🔔 Compliance Alerts</span></div>
+              <div id="complianceAlerts"><div style="padding:1rem;color:#888;font-size:0.85rem;">Loading...</div></div>
             </div>
           </div>
           <div class="db-card">
-            <div class="db-card-header"><span class="db-card-title">Staff Training Compliance</span></div>
+            <div class="db-card-header"><span class="db-card-title">Caregiver Roster — Compliance Status</span><button class="db-btn db-btn-outline" style="font-size:0.78rem;padding:0.4rem 0.9rem;" onclick="loadCompliance()">↻ Refresh</button></div>
             <table class="db-table">
-              <thead><tr><th>Caregiver</th><th>Orientation</th><th>In-Service (12hrs)</th><th>HIPAA</th><th>Status</th></tr></thead>
-              <tbody>
-                <tr><td>Maria Santos</td><td><span class="badge badge-green">✓</span></td><td>12/12 hrs</td><td><span class="badge badge-green">✓</span></td><td><span class="badge badge-green">Compliant</span></td></tr>
-                <tr><td>James Thompson</td><td><span class="badge badge-green">✓</span></td><td>10/12 hrs</td><td><span class="badge badge-green">✓</span></td><td><span class="badge badge-gold">In Progress</span></td></tr>
-                <tr><td>Angela Williams</td><td><span class="badge badge-green">✓</span></td><td>12/12 hrs</td><td><span class="badge badge-green">✓</span></td><td><span class="badge badge-gold">CPR Due</span></td></tr>
-              </tbody>
+              <thead><tr><th>Caregiver</th><th>Phone</th><th>Address</th><th>Role</th><th>Visits This Month</th><th>Status</th></tr></thead>
+              <tbody id="complianceTableBody"><tr><td colspan="6" style="text-align:center;color:#888;">Loading...</td></tr></tbody>
             </table>
           </div>
         </div>
         <div class="db-panel" id="m-reports">
-          <div class="db-page-title">Reports &amp; Analytics</div><div class="db-page-sub">Performance metrics and business intelligence.</div>
+          <div class="db-page-title">Reports &amp; Analytics</div><div class="db-page-sub">Live performance metrics from your real data.</div>
           <div class="db-stats">
-            <div class="db-stat-card"><div class="db-stat-icon">📈</div><div class="db-stat-val">$480k</div><div class="db-stat-label">Year 1 Target</div><div class="db-stat-change up">On track</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">😊</div><div class="db-stat-val">98%</div><div class="db-stat-label">Satisfaction Score</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">📅</div><div class="db-stat-val">4%</div><div class="db-stat-label">Missed Visits</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">👥</div><div class="db-stat-val">12%</div><div class="db-stat-label">Staff Turnover</div><div class="db-stat-change up">↓ vs industry</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">📅</div><div class="db-stat-val" id="repTotalVisits">—</div><div class="db-stat-label">Total Visits (All Time)</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">⏱️</div><div class="db-stat-val" id="repTotalHours">—</div><div class="db-stat-label">Total Hours Delivered</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">👥</div><div class="db-stat-val" id="repTotalClients">—</div><div class="db-stat-label">Total Clients Served</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">🧑‍⚕️</div><div class="db-stat-val" id="repTotalCaregivers">—</div><div class="db-stat-label">Active Caregivers</div></div>
           </div>
           <div class="db-grid-2">
             <div class="db-card">
-              <div class="db-card-header"><span class="db-card-title">Revenue by Month (2025)</span></div>
-              <div style="padding:1.5rem;">
-                <div style="display:flex;align-items:flex-end;gap:8px;height:120px;">
-                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;"><div style="width:100%;background:linear-gradient(to top,var(--sage-dark),var(--sage));border-radius:6px 6px 0 0;height:45%;"></div><span style="font-size:0.65rem;color:var(--mid);">Jan</span></div>
-                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;"><div style="width:100%;background:linear-gradient(to top,var(--sage-dark),var(--sage));border-radius:6px 6px 0 0;height:52%;"></div><span style="font-size:0.65rem;color:var(--mid);">Feb</span></div>
-                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;"><div style="width:100%;background:linear-gradient(to top,var(--sage-dark),var(--sage));border-radius:6px 6px 0 0;height:60%;"></div><span style="font-size:0.65rem;color:var(--mid);">Mar</span></div>
-                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;"><div style="width:100%;background:linear-gradient(to top,var(--sage-dark),var(--sage));border-radius:6px 6px 0 0;height:70%;"></div><span style="font-size:0.65rem;color:var(--mid);">Apr</span></div>
-                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;"><div style="width:100%;background:linear-gradient(to top,var(--gold),var(--gold-light));border-radius:6px 6px 0 0;height:80%;"></div><span style="font-size:0.65rem;color:var(--mid);">May</span></div>
-                </div>
-              </div>
+              <div class="db-card-header"><span class="db-card-title">📊 Visits by Service Type</span></div>
+              <div id="repServiceBreakdown" style="padding:1rem;"><div style="color:#888;font-size:0.85rem;">Loading...</div></div>
             </div>
             <div class="db-card">
-              <div class="db-card-header"><span class="db-card-title">Client Acquisition</span></div>
-              <div style="padding:1.5rem;display:flex;flex-direction:column;gap:0.85rem;">
-                <div><div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:0.3rem;"><span>Referrals</span><span style="font-weight:600;">42%</span></div><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:42%"></div></div></div>
-                <div><div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:0.3rem;"><span>Digital / Website</span><span style="font-weight:600;">31%</span></div><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:31%"></div></div></div>
-                <div><div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:0.3rem;"><span>Community Outreach</span><span style="font-weight:600;">18%</span></div><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:18%"></div></div></div>
-                <div><div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:0.3rem;"><span>Word of Mouth</span><span style="font-weight:600;">9%</span></div><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:9%"></div></div></div>
-              </div>
+              <div class="db-card-header"><span class="db-card-title">🏆 Top Caregivers by Hours</span></div>
+              <div id="repTopCaregivers" style="padding:1rem;"><div style="color:#888;font-size:0.85rem;">Loading...</div></div>
             </div>
+          </div>
+          <div class="db-card" style="margin-top:1.25rem;">
+            <div class="db-card-header"><span class="db-card-title">📅 Recent Visit Activity</span><button class="db-btn db-btn-outline" style="font-size:0.78rem;padding:0.4rem 0.9rem;" onclick="loadReports()">↻ Refresh</button></div>
+            <table class="db-table">
+              <thead><tr><th>Date</th><th>Client</th><th>Caregiver</th><th>Service</th><th>Hours</th><th>Status</th></tr></thead>
+              <tbody id="repVisitTable"><tr><td colspan="6" style="text-align:center;color:#888;">Loading...</td></tr></tbody>
+            </table>
           </div>
         </div>
         <div class="db-panel" id="m-messages">
-          <div class="db-page-title">Messages</div><div class="db-page-sub">Internal communications with caregivers and families.</div>
-          <div class="db-card">
-            <div class="db-card-header"><span class="db-card-title">Inbox</span><button class="db-btn db-btn-primary" style="font-size:0.78rem;padding:0.4rem 0.9rem;">+ Compose</button></div>
-            <div class="msg-list-item"><div class="msg-list-avatar">👩‍👧</div><div><div class="msg-list-name">Sandra M. (family of Dorothy R.)</div><div class="msg-list-preview">Thank you so much for the update on mom's care plan...</div></div><div class="msg-list-time">2h ago</div><div class="msg-unread"></div></div>
-            <div class="msg-list-item"><div class="msg-list-avatar">🧑‍⚕️</div><div><div class="msg-list-name">Maria Santos (Caregiver)</div><div class="msg-list-preview">Mrs. Reynolds had a good morning today...</div></div><div class="msg-list-time">4h ago</div></div>
-            <div class="msg-list-item"><div class="msg-list-avatar">🏥</div><div><div class="msg-list-name">Inova Fairfax — Discharge Planner</div><div class="msg-list-preview">We have a new referral, 69yo male, post-hip replacement...</div></div><div class="msg-list-time">Yesterday</div><div class="msg-unread"></div></div>
+          <div class="db-page-title">Messages</div><div class="db-page-sub">Internal communications with caregivers.</div>
+          <div style="display:grid;grid-template-columns:300px 1fr;gap:1.25rem;height:500px;">
+            <div class="db-card" style="overflow-y:auto;padding:0;">
+              <div style="padding:1rem;border-bottom:1px solid #e8eaed;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:white;z-index:1;">
+                <strong style="font-size:0.9rem;">Inbox</strong>
+                <button class="db-btn db-btn-primary" style="font-size:0.75rem;padding:0.3rem 0.7rem;" onclick="openCompose()">+ New</button>
+              </div>
+              <div id="msgInboxList"><div style="padding:1rem;color:#888;font-size:0.85rem;">Loading...</div></div>
+            </div>
+            <div class="db-card" id="msgThreadPanel" style="overflow-y:auto;display:flex;flex-direction:column;">
+              <div id="msgThreadContent" style="flex:1;padding:1rem;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.9rem;">Select a conversation to read</div>
+            </div>
+          </div>
+          <!-- Compose Modal -->
+          <div id="composeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+            <div style="background:white;border-radius:16px;padding:2rem;width:100%;max-width:500px;margin:1rem;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+                <h3 style="margin:0;color:#0D2B1F;">New Message</h3>
+                <button onclick="document.getElementById('composeModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button>
+              </div>
+              <div class="db-form-group"><label>To (Caregiver)</label><select id="composeTo" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"><option value="">— Select Caregiver —</option></select></div>
+              <div class="db-form-group"><label>Subject</label><input type="text" id="composeSubject" placeholder="e.g. Schedule update" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+              <div class="db-form-group"><label>Message</label><textarea id="composeBody" rows="4" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;resize:vertical;font-family:inherit;"></textarea></div>
+              <div style="display:flex;gap:0.75rem;margin-top:0.75rem;">
+                <button onclick="document.getElementById('composeModal').style.display='none'" style="flex:1;padding:0.85rem;border:1.5px solid #ccc;border-radius:10px;background:white;cursor:pointer;">Cancel</button>
+                <button onclick="sendMessage()" style="flex:2;padding:0.85rem;border:none;border-radius:10px;background:#0D2B1F;color:#C9A84C;font-weight:700;cursor:pointer;">Send Message</button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="db-panel" id="m-alerts">
-          <div class="db-page-title">Alerts &amp; Notifications</div><div class="db-page-sub">Urgent items requiring your attention.</div>
+          <div class="db-page-title">Alerts &amp; Notifications</div><div class="db-page-sub">Live alerts generated from your real data.</div>
+          <div class="db-card" style="margin-bottom:1.25rem;">
+            <div class="db-card-header"><span class="db-card-title">🚨 Active Alerts</span><span id="alertsPageBadge" class="badge badge-red" style="display:none;"></span><button class="db-btn db-btn-outline" style="font-size:0.78rem;padding:0.4rem 0.9rem;margin-left:auto;" onclick="loadAlerts()">↻ Refresh</button></div>
+            <div id="alertsPageList"><div style="padding:1rem;color:#888;font-size:0.85rem;">Loading...</div></div>
+          </div>
           <div class="db-card">
-            <div class="db-card-header"><span class="db-card-title">Active Alerts</span><span class="badge badge-red">3 Urgent</span></div>
-            <div class="alert-item"><span class="alert-icon">🚨</span><div><div class="alert-text"><strong>URGENT:</strong> Caregiver John Brown called out sick. Frank Lewis's 2:00 PM visit is uncovered.</div><div class="alert-time">35 min ago</div></div></div>
-            <div class="alert-item"><span class="alert-icon">⚠️</span><div><div class="alert-text"><strong>IMPORTANT:</strong> Dorothy Reynolds's care plan expires May 19.</div><div class="alert-time">2 hrs ago</div></div></div>
-            <div class="alert-item"><span class="alert-icon">📋</span><div><div class="alert-text">Angela Williams's CPR certification expires May 31.</div><div class="alert-time">Today</div></div></div>
-            <div class="alert-item"><span class="alert-icon">💳</span><div><div class="alert-text">Invoice #INV-2025-050 (Frank Lewis) is 7 days overdue.</div><div class="alert-time">Yesterday</div></div></div>
+            <div class="db-card-header"><span class="db-card-title">📋 Recent Incidents</span></div>
+            <table class="db-table">
+              <thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Description</th><th>Status</th></tr></thead>
+              <tbody id="alertsIncidentTable"><tr><td colspan="5" style="text-align:center;color:#888;">Loading...</td></tr></tbody>
+            </table>
           </div>
         </div>
         <div class="db-panel" id="m-settings">
@@ -2324,7 +2333,8 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'visits' }, () => { loadDashboard(); loadVisits(); })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => { loadDashboard(); loadClients(); })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => { loadDashboard(); loadCaregivers(); })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'incidents' }, () => loadDashboard())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'incidents' }, () => { loadDashboard(); loadAlerts(); loadReports(); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'manager_messages' }, () => loadMessages())
         .subscribe();
     }
 
@@ -2654,6 +2664,263 @@
       await loadCaregivers();
     }
 
+    // ── Alerts Panel ──
+    async function loadAlerts() {
+      const today = new Date().toISOString().slice(0,10);
+      const [unassigned, incidents] = await Promise.all([
+        db.from('visits').select('*, clients(full_name)').eq('visit_date', today).is('caregiver_id', null),
+        db.from('incidents').select('*, clients(full_name)').order('created_at',{ascending:false}).limit(10),
+      ]);
+
+      const alerts = [];
+      (unassigned.data||[]).forEach(v => alerts.push({ icon:'🚨', text:'<strong>UNASSIGNED:</strong> ' + (v.clients?.full_name||'Client') + ' visit at ' + fmtTime(v.start_time) + ' has no caregiver assigned.', urgent:true }));
+      (incidents.data||[]).slice(0,3).forEach(i => alerts.push({ icon:'⚠️', text:'<strong>Incident:</strong> ' + (i.clients?.full_name||'Client') + (i.incident_type ? ' — ' + i.incident_type : ''), time: new Date(i.created_at).toLocaleDateString(), urgent:true }));
+      if (alerts.length === 0) alerts.push({ icon:'✅', text:'No active alerts — everything looks good!', urgent:false });
+
+      const list = document.getElementById('alertsPageList');
+      const badge = document.getElementById('alertsPageBadge');
+      const urgent = alerts.filter(a=>a.urgent).length;
+      if (badge) { badge.style.display = urgent > 0 ? '' : 'none'; badge.textContent = urgent + ' urgent'; }
+      if (list) list.innerHTML = alerts.map(a => '<div class="alert-item"><span class="alert-icon">' + a.icon + '</span><div><div class="alert-text">' + a.text + '</div>' + (a.time ? '<div class="alert-time">' + a.time + '</div>' : '') + '</div></div>').join('');
+
+      const incBody = document.getElementById('alertsIncidentTable');
+      if (incBody) {
+        if (!incidents.data || incidents.data.length === 0) { incBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">No incidents recorded.</td></tr>'; return; }
+        incBody.innerHTML = incidents.data.map(i => '<tr><td>' + new Date(i.created_at).toLocaleDateString() + '</td><td>' + (i.clients?.full_name||'—') + '</td><td>' + (i.incident_type||'—') + '</td><td>' + (i.description||'—').slice(0,60) + '...</td><td><span class="badge badge-gold">Logged</span></td></tr>').join('');
+      }
+    }
+
+    // ── Billing Panel ──
+    async function loadBilling() {
+      const monthStart = new Date().toISOString().slice(0,7) + '-01';
+      const today = new Date().toISOString().slice(0,10);
+      const RATE = 25; // $25/hr default
+
+      const { data: visits, count } = await db.from('visits').select('*, clients(full_name)', { count: 'exact' })
+        .gte('visit_date', monthStart).lte('visit_date', today).neq('status','cancelled');
+
+      const clientMap = {};
+      (visits||[]).forEach(v => {
+        const cid = v.client_id;
+        if (!clientMap[cid]) clientMap[cid] = { name: v.clients?.full_name||'Unknown', visits:0, hours:0, services:new Set() };
+        clientMap[cid].visits++;
+        clientMap[cid].hours += parseFloat(v.duration_hours)||0;
+        if (v.service_type) clientMap[cid].services.add(v.service_type);
+      });
+
+      const rows = Object.values(clientMap).sort((a,b) => b.hours - a.hours);
+      const totalHours = rows.reduce((s,r)=>s+r.hours,0);
+      const totalRevenue = totalHours * RATE;
+      const uniqueClients = Object.keys(clientMap).length;
+
+      const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+      set('billTotalMonth', '$' + Math.round(totalRevenue).toLocaleString());
+      set('billTotalMonthSub', '@$' + RATE + '/hr avg rate');
+      set('billVisitsMonth', count||0);
+      set('billHoursMonth', totalHours.toFixed(1));
+      set('billActiveClients', uniqueClients);
+
+      const tbody = document.getElementById('billingTableBody');
+      if (tbody) {
+        if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">No visits this month yet.</td></tr>'; return; }
+        tbody.innerHTML = rows.map(r => '<tr><td><strong>' + r.name + '</strong></td><td>' + r.visits + '</td><td>' + r.hours.toFixed(1) + '</td><td>$' + Math.round(r.hours * RATE).toLocaleString() + '</td><td>' + [...r.services].join(', ') + '</td></tr>').join('');
+      }
+    }
+
+    // ── Compliance Panel ──
+    async function loadCompliance() {
+      const monthStart = new Date().toISOString().slice(0,7) + '-01';
+      const today = new Date().toISOString().slice(0,10);
+
+      const [caregivers, visits, incidents] = await Promise.all([
+        db.from('profiles').select('*').eq('role','caregiver'),
+        db.from('visits').select('caregiver_id').gte('visit_date', monthStart).lte('visit_date', today),
+        db.from('incidents').select('caregiver_id').gte('created_at', monthStart),
+      ]);
+
+      const visitMap = {}, incMap = {};
+      (visits.data||[]).forEach(v => { visitMap[v.caregiver_id] = (visitMap[v.caregiver_id]||0)+1; });
+      (incidents.data||[]).forEach(i => { incMap[i.caregiver_id] = (incMap[i.caregiver_id]||0)+1; });
+
+      const tbody = document.getElementById('complianceTableBody');
+      if (tbody) {
+        if (!caregivers.data || caregivers.data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#888;">No caregivers added yet.</td></tr>'; }
+        else {
+          tbody.innerHTML = caregivers.data.map(cg => {
+            const vCount = visitMap[cg.id]||0;
+            const hasAddress = !!cg.address;
+            const status = !hasAddress ? '<span class="badge badge-gold">Missing Address</span>' : vCount === 0 ? '<span class="badge badge-gold">No Visits</span>' : '<span class="badge badge-green">Active</span>';
+            return '<tr><td><strong>' + cg.full_name + '</strong></td><td>' + (cg.phone||'—') + '</td><td>' + (cg.address||'<span style="color:#e74c3c;">Not on file</span>') + '</td><td>Caregiver</td><td>' + vCount + '</td><td>' + status + '</td></tr>';
+          }).join('');
+        }
+      }
+
+      // Compliance alerts
+      const alertsEl = document.getElementById('complianceAlerts');
+      if (alertsEl) {
+        const noAddr = (caregivers.data||[]).filter(cg=>!cg.address);
+        const noVisits = (caregivers.data||[]).filter(cg=>visitMap[cg.id]===undefined);
+        const items = [];
+        noAddr.forEach(cg => items.push({ icon:'⚠️', text: cg.full_name + ' has no address on file — distance matching disabled', time:'' }));
+        noVisits.forEach(cg => items.push({ icon:'📋', text: cg.full_name + ' has no visits scheduled this month', time:'' }));
+        if (items.length === 0) items.push({ icon:'✅', text: 'All caregivers are active and have addresses on file', time:'' });
+        alertsEl.innerHTML = items.map(a => '<div class="alert-item"><span class="alert-icon">' + a.icon + '</span><div><div class="alert-text">' + a.text + '</div></div></div>').join('');
+      }
+    }
+
+    // ── Reports Panel ──
+    async function loadReports() {
+      const [allVisits, clients, caregivers] = await Promise.all([
+        db.from('visits').select('*, clients(full_name), profiles(full_name)').order('visit_date',{ascending:false}).limit(50),
+        db.from('clients').select('id', { count:'exact' }),
+        db.from('profiles').select('id,full_name', { count:'exact' }).eq('role','caregiver'),
+      ]);
+
+      const visits = allVisits.data || [];
+      const totalHours = visits.reduce((s,v)=>s+parseFloat(v.duration_hours||0),0);
+
+      const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+      set('repTotalVisits', visits.length);
+      set('repTotalHours', totalHours.toFixed(1));
+      set('repTotalClients', clients.count||0);
+      set('repTotalCaregivers', caregivers.count||0);
+
+      // Service breakdown
+      const svcMap = {};
+      visits.forEach(v => { const s=v.service_type||'Other'; svcMap[s]=(svcMap[s]||0)+1; });
+      const svcEl = document.getElementById('repServiceBreakdown');
+      if (svcEl) {
+        if (Object.keys(svcMap).length === 0) { svcEl.innerHTML = '<div style="color:#888;font-size:0.85rem;">No visits yet.</div>'; }
+        else {
+          const total = visits.length;
+          svcEl.innerHTML = Object.entries(svcMap).sort((a,b)=>b[1]-a[1]).map(([svc,cnt]) => {
+            const pct = Math.round((cnt/total)*100);
+            return '<div style="margin-bottom:0.85rem;"><div style="display:flex;justify-content:space-between;font-size:0.83rem;margin-bottom:0.3rem;"><span>' + svc + '</span><span style="font-weight:600;">' + cnt + ' visits (' + pct + '%)</span></div><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:' + pct + '%"></div></div></div>';
+          }).join('');
+        }
+      }
+
+      // Top caregivers
+      const cgMap = {};
+      visits.forEach(v => {
+        const name = v.profiles?.full_name||'Unknown';
+        if (!cgMap[name]) cgMap[name] = 0;
+        cgMap[name] += parseFloat(v.duration_hours||0);
+      });
+      const cgEl = document.getElementById('repTopCaregivers');
+      if (cgEl) {
+        if (Object.keys(cgMap).length === 0) { cgEl.innerHTML = '<div style="color:#888;font-size:0.85rem;">No caregiver data yet.</div>'; }
+        else {
+          const maxHrs = Math.max(...Object.values(cgMap));
+          cgEl.innerHTML = Object.entries(cgMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([name,hrs],i) => {
+            const pct = Math.round((hrs/maxHrs)*100);
+            const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+            return '<div style="margin-bottom:0.85rem;"><div style="display:flex;justify-content:space-between;font-size:0.83rem;margin-bottom:0.3rem;"><span>' + medal + ' ' + name + '</span><span style="font-weight:600;">' + hrs.toFixed(1) + ' hrs</span></div><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:' + pct + '%"></div></div></div>';
+          }).join('');
+        }
+      }
+
+      // Visit table
+      const tbody = document.getElementById('repVisitTable');
+      if (tbody) {
+        if (visits.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#888;">No visits recorded yet.</td></tr>'; return; }
+        tbody.innerHTML = visits.slice(0,20).map(v => {
+          const statusColor = v.status==='completed'?'green':v.status==='cancelled'?'red':'gold';
+          return '<tr><td>' + v.visit_date + '</td><td>' + (v.clients?.full_name||'—') + '</td><td>' + (v.profiles?.full_name||'—') + '</td><td>' + (v.service_type||'—') + '</td><td>' + (v.duration_hours||'—') + '</td><td><span class="badge badge-' + statusColor + '">' + (v.status||'scheduled') + '</span></td></tr>';
+        }).join('');
+      }
+    }
+
+    // ── Messages Panel ──
+    let msgCaregiversList = [];
+    let activeThread = null;
+
+    async function loadMessages() {
+      const { data: caregivers } = await db.from('profiles').select('id,full_name').eq('role','caregiver');
+      msgCaregiversList = caregivers || [];
+
+      const composeSel = document.getElementById('composeTo');
+      if (composeSel) {
+        composeSel.innerHTML = '<option value="">— Select Caregiver —</option>';
+        msgCaregiversList.forEach(cg => { const o=new Option(cg.full_name, cg.id); composeSel.appendChild(o); });
+      }
+
+      const { data: msgs } = await db.from('manager_messages').select('*, from:from_id(full_name), to:to_id(full_name)').order('created_at',{ascending:false}).limit(30);
+      const inbox = document.getElementById('msgInboxList');
+      if (!inbox) return;
+      if (!msgs || msgs.length === 0) { inbox.innerHTML = '<div style="padding:1rem;color:#888;font-size:0.85rem;">No messages yet. Click + New to send one.</div>'; return; }
+
+      // Group by thread partner
+      const threads = {};
+      msgs.forEach(m => {
+        const partner = m.from_id === 'manager' ? m.to_id : m.from_id;
+        if (!threads[partner]) threads[partner] = { name: m.from?.full_name||m.to?.full_name||'Unknown', msgs:[], unread:0 };
+        threads[partner].msgs.push(m);
+        if (!m.read) threads[partner].unread++;
+      });
+
+      inbox.innerHTML = Object.entries(threads).map(([id, t]) => {
+        const latest = t.msgs[0];
+        const preview = (latest.body||'').slice(0,50) + '...';
+        const time = new Date(latest.created_at).toLocaleDateString();
+        const unread = t.unread > 0 ? '<span style="background:#0D2B1F;color:white;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;">' + t.unread + '</span>' : '';
+        return '<div onclick="openThread(\'' + id + '\',\'' + t.name.replace(/'/g,"\\'") + '\')" style="padding:0.85rem 1rem;border-bottom:1px solid #f0f0f0;cursor:pointer;display:flex;gap:0.75rem;align-items:center;" onmouseover="this.style.background=\'#f8f8f8\'" onmouseout="this.style.background=\'white\'"><div style="width:36px;height:36px;border-radius:50%;background:#0D2B1F;display:flex;align-items:center;justify-content:center;color:#C9A84C;font-weight:700;font-size:0.85rem;flex-shrink:0;">' + t.name.charAt(0) + '</div><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:0.85rem;color:#333;">' + t.name + '</div><div style="font-size:0.78rem;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + preview + '</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem;"><span style="font-size:0.7rem;color:#aaa;">' + time + '</span>' + unread + '</div></div>';
+      }).join('');
+    }
+
+    async function openThread(caregiverId, name) {
+      activeThread = caregiverId;
+      const { data: msgs } = await db.from('manager_messages')
+        .select('*, from:from_id(full_name)').or('from_id.eq.' + caregiverId + ',to_id.eq.' + caregiverId)
+        .order('created_at', {ascending:true});
+
+      const panel = document.getElementById('msgThreadContent');
+      if (!panel) return;
+
+      if (!msgs || msgs.length === 0) {
+        panel.innerHTML = '<div style="text-align:center;color:#aaa;padding:2rem;">No messages with ' + name + ' yet.</div><div style="padding:1rem;border-top:1px solid #eee;display:flex;gap:0.5rem;"><input id="quickMsgInput" type="text" placeholder="Type a message..." style="flex:1;padding:0.65rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.9rem;" onkeydown="if(event.key===\'Enter\')sendQuickMsg(\'' + caregiverId + '\')"><button onclick="sendQuickMsg(\'' + caregiverId + '\')" style="padding:0.65rem 1.25rem;background:#0D2B1F;color:#C9A84C;border:none;border-radius:10px;cursor:pointer;font-weight:600;">Send</button></div>';
+        return;
+      }
+
+      panel.innerHTML = '<div style="font-weight:600;padding:0.75rem 1rem;border-bottom:1px solid #eee;color:#0D2B1F;">' + name + '</div><div style="flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;">' + msgs.map(m => {
+        const isManager = !m.from_id || m.from?.full_name === 'PC Homecare Manager';
+        const align = isManager ? 'flex-end' : 'flex-start';
+        const bg = isManager ? '#0D2B1F' : '#f0f0f0';
+        const color = isManager ? 'white' : '#333';
+        return '<div style="display:flex;justify-content:' + align + ';"><div style="max-width:75%;background:' + bg + ';color:' + color + ';border-radius:12px;padding:0.65rem 0.9rem;font-size:0.88rem;">' + (m.subject ? '<div style="font-weight:600;margin-bottom:0.25rem;font-size:0.78rem;opacity:0.8;">' + m.subject + '</div>' : '') + m.body + '<div style="font-size:0.7rem;opacity:0.6;margin-top:0.3rem;text-align:right;">' + new Date(m.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) + '</div></div></div>';
+      }).join('') + '</div><div style="padding:0.75rem;border-top:1px solid #eee;display:flex;gap:0.5rem;"><input id="quickMsgInput" type="text" placeholder="Reply to ' + name + '..." style="flex:1;padding:0.65rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.9rem;" onkeydown="if(event.key===\'Enter\')sendQuickMsg(\'' + caregiverId + '\')"><button onclick="sendQuickMsg(\'' + caregiverId + '\')" style="padding:0.65rem 1.25rem;background:#0D2B1F;color:#C9A84C;border:none;border-radius:10px;cursor:pointer;font-weight:600;">Send</button></div>';
+
+      // Mark as read
+      await db.from('manager_messages').update({read:true}).eq('from_id', caregiverId);
+    }
+
+    async function sendQuickMsg(toId) {
+      const input = document.getElementById('quickMsgInput');
+      const body = input?.value.trim();
+      if (!body) return;
+      const { data: mgr } = await db.from('profiles').select('id').eq('role','manager').single();
+      await db.from('manager_messages').insert({ from_id: mgr?.id||null, to_id: toId, body, subject: 'Message from Manager' });
+      input.value = '';
+      const cg = msgCaregiversList.find(c=>c.id===toId);
+      openThread(toId, cg?.full_name||'Caregiver');
+    }
+
+    function openCompose() { document.getElementById('composeModal').style.display='flex'; }
+
+    async function sendMessage() {
+      const toId = document.getElementById('composeTo').value;
+      const subject = document.getElementById('composeSubject').value.trim();
+      const body = document.getElementById('composeBody').value.trim();
+      if (!toId || !body) { alert('Please select a recipient and enter a message.'); return; }
+      const { data: mgr } = await db.from('profiles').select('id').eq('role','manager').single();
+      const { error } = await db.from('manager_messages').insert({ from_id: mgr?.id||null, to_id: toId, subject: subject||'Message', body });
+      if (error) { alert('Error: ' + error.message); return; }
+      document.getElementById('composeModal').style.display='none';
+      document.getElementById('composeBody').value='';
+      document.getElementById('composeSubject').value='';
+      await loadMessages();
+    }
+
     function exportRatesCSV() {
       const rows = [['Service Type','Standard Rate','Weekend Rate','Holiday Rate'],['Companion / Homemaker','$22/hr','$26/hr','$30/hr'],['Personal Care Aide','$25/hr','$29/hr','$34/hr'],['Dementia / Memory Care','$28/hr','$32/hr','$37/hr'],['Live-In Care','$220/day','$240/day','$265/day'],['Overnight Care','$160/night','$180/night','$200/night']];
       downloadCSV(rows, 'PC_Homecare_Rates.csv');
@@ -2740,7 +3007,7 @@
       const dashMap = { manager:'managerDash', caregiver:'caregiverDash', client:'clientDash' };
       document.getElementById(dashMap[currentRole]).classList.add('active');
       document.body.style.overflow = 'hidden';
-      if (currentRole === 'manager') { loadDashboard(); loadClients(); loadCaregivers(); loadVisits(); startRealtime(); }
+      if (currentRole === 'manager') { loadDashboard(); loadClients(); loadCaregivers(); loadVisits(); loadAlerts(); loadBilling(); loadCompliance(); loadReports(); loadMessages(); startRealtime(); }
     }
 
     document.getElementById('loginPassword').addEventListener('keydown', function(e) {
