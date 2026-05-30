@@ -33,7 +33,7 @@ module.exports = async function (req, res) {
   await delay(800);
 
   await supabaseRequest(supabaseUrl, serviceKey, 'POST', '/rest/v1/profiles', {
-    id: userId, full_name, role: 'caregiver', phone: phone || null, address: address || null,
+    id: userId, full_name, role: 'caregiver', phone: phone || null, address: address || null, email: caregiverEmail,
   }, { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
 
   res.status(200).json({ success: true, email: caregiverEmail, temp_password: tempPassword, id: userId });

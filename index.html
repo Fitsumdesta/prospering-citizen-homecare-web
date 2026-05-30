@@ -1939,6 +1939,7 @@
         <button onclick="closeEditCaregiverModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">✕</button>
       </div>
       <div class="db-form-group"><label>Full Name *</label><input type="text" id="editCgName" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+      <div class="db-form-group"><label>Email <span style="font-size:0.8rem;color:#888;">(for message notifications)</span></label><input type="email" id="editCgEmail" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
       <div class="db-form-group"><label>Phone</label><input type="tel" id="editCgPhone" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
       <div class="db-form-group"><label>Home Address <span style="font-size:0.8rem;color:#888;">(used for distance matching)</span></label><input type="text" id="editCgAddress" placeholder="e.g. 123 Main St, Fairfax VA 22030" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
       <div style="display:flex;gap:0.75rem;margin-top:1.25rem;">
@@ -2644,6 +2645,7 @@
     function openEditCaregiver(cg) {
       editingCaregiverId = cg.id;
       document.getElementById('editCgName').value = cg.full_name || '';
+      document.getElementById('editCgEmail').value = cg.email || '';
       document.getElementById('editCgPhone').value = cg.phone || '';
       document.getElementById('editCgAddress').value = cg.address || '';
       document.getElementById('editCaregiverModal').style.display = 'flex';
@@ -2657,6 +2659,7 @@
       if (!name) { alert('Name is required'); return; }
       const { error } = await db.from('profiles').update({
         full_name: name,
+        email: document.getElementById('editCgEmail').value.trim() || null,
         phone: document.getElementById('editCgPhone').value.trim() || null,
         address: document.getElementById('editCgAddress').value.trim() || null,
         lat: null, lng: null,
@@ -2992,6 +2995,33 @@
       if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Message'; }
 
       if (error) { showErr('Send failed: ' + error.message); return; }
+
+      // Send email notification
+      try {
+        let recipientEmail = null;
+        if (type === 'caregiver') {
+          const { data: cgData } = await db.from('profiles').select('email').eq('id', id).single();
+          recipientEmail = cgData?.email;
+        } else if (type === 'client') {
+          const { data: clData } = await db.from('clients').select('email').eq('id', id).single();
+          recipientEmail = clData?.email;
+        }
+        if (recipientEmail) {
+          await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: recipientEmail,
+              toName: recipientName,
+              subject: subject || 'New message from PC Homecare',
+              body: body,
+              fromName: 'PC Homecare Manager',
+            }),
+          });
+        }
+      } catch(emailErr) {
+        console.warn('Email notification failed:', emailErr.message);
+      }
 
       if (modal)    modal.style.display = 'none';
       if (bodyInp)  bodyInp.value  = '';
