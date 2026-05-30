@@ -1096,7 +1096,7 @@
                 <div class="db-form-group"><label>Time</label><input type="time" id="scheduleTime" /></div>
               </div>
               <div class="db-form-row">
-                <div class="db-form-group"><label>Duration</label><select id="scheduleDuration"><option value="1">1 hour</option><option value="2">2 hours</option><option value="3">3 hours</option><option value="4">4 hours</option><option value="8">8 hours</option></select></div>
+                <div class="db-form-group"><label>Duration</label><div style="display:flex;gap:0.5rem;align-items:center;"><input type="number" id="scheduleDurationHours" min="0" max="24" placeholder="Hrs" style="width:70px;padding:0.65rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.9rem;"><span style="color:#888;font-size:0.85rem;">hr</span><input type="number" id="scheduleDurationMins" min="0" max="59" placeholder="Min" style="width:70px;padding:0.65rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.9rem;"><span style="color:#888;font-size:0.85rem;">min</span></div></div>
                 <div class="db-form-group"><label>Service Type</label><select id="scheduleService"><option>Personal Care</option><option>Companionship</option><option>Dementia Care</option><option>Meal Preparation</option><option>Post-Hospital Care</option><option>Live-In Care</option></select></div>
               </div>
               <div id="scheduleMsg" style="display:none;padding:0.75rem;border-radius:10px;margin-bottom:0.75rem;font-size:0.9rem;"></div>
@@ -2113,7 +2113,9 @@
       const caregiverId = document.getElementById('scheduleCaregiver').value;
       const date = document.getElementById('scheduleDate').value;
       const time = document.getElementById('scheduleTime').value;
-      const duration = document.getElementById('scheduleDuration').value;
+      const durationHrs = parseInt(document.getElementById('scheduleDurationHours').value) || 0;
+      const durationMins = parseInt(document.getElementById('scheduleDurationMins').value) || 0;
+      const durationDecimal = durationHrs + (durationMins / 60);
       const service = document.getElementById('scheduleService').value;
       const msg = document.getElementById('scheduleMsg');
 
@@ -2135,7 +2137,7 @@
         caregiver_id: caregiverId,
         visit_date: date,
         start_time: time,
-        duration_hours: parseInt(duration),
+        duration_hours: durationDecimal,
         service_type: service,
         status: 'scheduled'
       });
@@ -2183,7 +2185,11 @@
         const badge = '<span class="badge badge-' + statusColor + '">' + (v.status || 'Scheduled') + '</span>';
         const item = document.createElement('div');
         item.className = 'schedule-item';
-        item.innerHTML = '<span class="sched-time">' + displayTime + '</span><div class="sched-dot ' + statusColor + '"></div><div class="sched-info"><div class="sched-title">' + clientName + ' → ' + caregiverName + '</div><div class="sched-sub">' + v.service_type + ' · ' + v.duration_hours + 'hr · ' + v.visit_date + ' · ' + badge + '</div></div>';
+        const totalMins = Math.round((v.duration_hours || 0) * 60);
+        const dispHrs = Math.floor(totalMins / 60);
+        const dispMins = totalMins % 60;
+        const durStr = dispHrs > 0 && dispMins > 0 ? dispHrs + 'hr ' + dispMins + 'min' : dispHrs > 0 ? dispHrs + 'hr' : dispMins + 'min';
+        item.innerHTML = '<span class="sched-time">' + displayTime + '</span><div class="sched-dot ' + statusColor + '"></div><div class="sched-info"><div class="sched-title">' + clientName + ' → ' + caregiverName + '</div><div class="sched-sub">' + v.service_type + ' · ' + durStr + ' · ' + v.visit_date + ' · ' + badge + '</div></div>';
         list.appendChild(item);
       });
     }
