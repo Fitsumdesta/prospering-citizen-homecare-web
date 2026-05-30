@@ -3171,7 +3171,7 @@
       if (t) t.remove();
     }
 
-    async function sendMessage() {
+    async function claraSend() {
       const text = input.value.trim();
       if (!text) return;
       input.value = '';
@@ -3219,8 +3219,8 @@ Always encourage the user to schedule a free consultation or call if they're rea
       }
     }
 
-    sendBtn.addEventListener('click', sendMessage);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+    sendBtn.addEventListener('click', claraSend);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') claraSend(); });
 
     // ── PHASE 4: TAB BAR HELPERS ──────────────────────────────────────────
     function setCaregiverTab(btn) {
