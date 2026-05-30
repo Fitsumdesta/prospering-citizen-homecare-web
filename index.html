@@ -2832,93 +2832,148 @@
     }
 
     // ── Messages Panel ──
-    let msgCaregiversList = [];
-    let activeThread = null;
+    let msgRecipients = []; // { id, name, type: 'caregiver'|'client' }
+    let activeThreadKey = null;
 
     async function loadMessages() {
-      const { data: caregivers } = await db.from('profiles').select('id,full_name').eq('role','caregiver');
-      msgCaregiversList = caregivers || [];
+      // Load caregivers and clients for recipient list
+      const [cgs, clients] = await Promise.all([
+        db.from('profiles').select('id,full_name').eq('role','caregiver'),
+        db.from('clients').select('id,full_name'),
+      ]);
+      msgRecipients = [
+        ...(cgs.data||[]).map(c=>({id:c.id, name:c.full_name, type:'caregiver'})),
+        ...(clients.data||[]).map(c=>({id:c.id, name:c.full_name + ' (Client/Family)', type:'client'})),
+      ];
 
+      // Populate compose dropdown
       const composeSel = document.getElementById('composeTo');
       if (composeSel) {
-        composeSel.innerHTML = '<option value="">— Select Caregiver —</option>';
-        msgCaregiversList.forEach(cg => { const o=new Option(cg.full_name, cg.id); composeSel.appendChild(o); });
+        composeSel.innerHTML = '<option value="">— Select Recipient —</option><optgroup label="Caregivers">' +
+          (cgs.data||[]).map(c=>'<option value="caregiver:' + c.id + '">' + c.full_name + '</option>').join('') +
+          '</optgroup><optgroup label="Clients / Family">' +
+          (clients.data||[]).map(c=>'<option value="client:' + c.id + '">' + c.full_name + ' (Client)</option>').join('') +
+          '</optgroup>';
       }
 
-      const { data: msgs } = await db.from('manager_messages').select('*, from:from_id(full_name), to:to_id(full_name)').order('created_at',{ascending:false}).limit(30);
+      // Load all messages
+      const { data: msgs, error } = await db.from('manager_messages')
+        .select('*').order('created_at',{ascending:false}).limit(50);
+
       const inbox = document.getElementById('msgInboxList');
       if (!inbox) return;
-      if (!msgs || msgs.length === 0) { inbox.innerHTML = '<div style="padding:1rem;color:#888;font-size:0.85rem;">No messages yet. Click + New to send one.</div>'; return; }
+      if (error || !msgs || msgs.length === 0) {
+        inbox.innerHTML = '<div style="padding:1rem;color:#888;font-size:0.85rem;">No messages yet. Click + New to send one.</div>';
+        return;
+      }
 
-      // Group by thread partner
+      // Group by thread key
       const threads = {};
       msgs.forEach(m => {
-        const partner = m.from_id === 'manager' ? m.to_id : m.from_id;
-        if (!threads[partner]) threads[partner] = { name: m.from?.full_name||m.to?.full_name||'Unknown', msgs:[], unread:0 };
-        threads[partner].msgs.push(m);
-        if (!m.read) threads[partner].unread++;
+        const key = m.recipient_name || m.to_id || m.to_client_id || 'unknown';
+        const name = m.recipient_name || 'Unknown';
+        const type = m.recipient_type || 'caregiver';
+        if (!threads[key]) threads[key] = { key, name, type, msgs:[], unread:0, threadId: m.to_id||m.to_client_id };
+        threads[key].msgs.push(m);
+        if (!m.read) threads[key].unread++;
       });
 
-      inbox.innerHTML = Object.entries(threads).map(([id, t]) => {
+      inbox.innerHTML = Object.values(threads).map(t => {
         const latest = t.msgs[0];
-        const preview = (latest.body||'').slice(0,50) + '...';
-        const time = new Date(latest.created_at).toLocaleDateString();
-        const unread = t.unread > 0 ? '<span style="background:#0D2B1F;color:white;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;">' + t.unread + '</span>' : '';
-        return '<div onclick="openThread(\'' + id + '\',\'' + t.name.replace(/'/g,"\\'") + '\')" style="padding:0.85rem 1rem;border-bottom:1px solid #f0f0f0;cursor:pointer;display:flex;gap:0.75rem;align-items:center;" onmouseover="this.style.background=\'#f8f8f8\'" onmouseout="this.style.background=\'white\'"><div style="width:36px;height:36px;border-radius:50%;background:#0D2B1F;display:flex;align-items:center;justify-content:center;color:#C9A84C;font-weight:700;font-size:0.85rem;flex-shrink:0;">' + t.name.charAt(0) + '</div><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:0.85rem;color:#333;">' + t.name + '</div><div style="font-size:0.78rem;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + preview + '</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem;"><span style="font-size:0.7rem;color:#aaa;">' + time + '</span>' + unread + '</div></div>';
+        const preview = (latest.body||'').slice(0,45) + (latest.body?.length>45?'...':'');
+        const time = new Date(latest.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        const unreadBadge = t.unread > 0 ? '<span style="background:#0D2B1F;color:white;border-radius:50%;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:0.68rem;padding:0 3px;">' + t.unread + '</span>' : '';
+        const icon = t.type === 'client' ? '👤' : '🧑‍⚕️';
+        const encodedKey = encodeURIComponent(t.key);
+        const encodedName = encodeURIComponent(t.name);
+        return '<div onclick="openThread(\'' + encodedKey + '\',\'' + encodedName + '\')" style="padding:0.85rem 1rem;border-bottom:1px solid #f0f0f0;cursor:pointer;" onmouseover="this.style.background=\'#f8f8f8\'" onmouseout="this.style.background=\'white\'"><div style="display:flex;gap:0.75rem;align-items:center;"><div style="width:36px;height:36px;border-radius:50%;background:#0D2B1F;display:flex;align-items:center;justify-content:center;color:#C9A84C;font-size:1rem;flex-shrink:0;">' + icon + '</div><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:0.85rem;color:#333;">' + t.name + '</div><div style="font-size:0.78rem;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + preview + '</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.3rem;flex-shrink:0;"><span style="font-size:0.7rem;color:#aaa;">' + time + '</span>' + unreadBadge + '</div></div></div>';
       }).join('');
     }
 
-    async function openThread(caregiverId, name) {
-      activeThread = caregiverId;
+    async function openThread(encodedKey, encodedName) {
+      const key = decodeURIComponent(encodedKey);
+      const name = decodeURIComponent(encodedName);
+      activeThreadKey = key;
+
       const { data: msgs } = await db.from('manager_messages')
-        .select('*, from:from_id(full_name)').or('from_id.eq.' + caregiverId + ',to_id.eq.' + caregiverId)
-        .order('created_at', {ascending:true});
+        .select('*').eq('recipient_name', key).order('created_at',{ascending:true});
 
       const panel = document.getElementById('msgThreadContent');
       if (!panel) return;
 
-      if (!msgs || msgs.length === 0) {
-        panel.innerHTML = '<div style="text-align:center;color:#aaa;padding:2rem;">No messages with ' + name + ' yet.</div><div style="padding:1rem;border-top:1px solid #eee;display:flex;gap:0.5rem;"><input id="quickMsgInput" type="text" placeholder="Type a message..." style="flex:1;padding:0.65rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.9rem;" onkeydown="if(event.key===\'Enter\')sendQuickMsg(\'' + caregiverId + '\')"><button onclick="sendQuickMsg(\'' + caregiverId + '\')" style="padding:0.65rem 1.25rem;background:#0D2B1F;color:#C9A84C;border:none;border-radius:10px;cursor:pointer;font-weight:600;">Send</button></div>';
-        return;
-      }
+      const replyBar = '<div style="padding:0.75rem;border-top:1px solid #eee;display:flex;gap:0.5rem;flex-shrink:0;"><input id="quickMsgInput" type="text" placeholder="Message ' + name + '..." style="flex:1;padding:0.65rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.9rem;" onkeydown="if(event.key===\'Enter\')sendQuickMsg()"><button onclick="sendQuickMsg()" style="padding:0.65rem 1.25rem;background:#0D2B1F;color:#C9A84C;border:none;border-radius:10px;cursor:pointer;font-weight:600;">Send</button></div>';
 
-      panel.innerHTML = '<div style="font-weight:600;padding:0.75rem 1rem;border-bottom:1px solid #eee;color:#0D2B1F;">' + name + '</div><div style="flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;">' + msgs.map(m => {
-        const isManager = !m.from_id || m.from?.full_name === 'PC Homecare Manager';
-        const align = isManager ? 'flex-end' : 'flex-start';
-        const bg = isManager ? '#0D2B1F' : '#f0f0f0';
-        const color = isManager ? 'white' : '#333';
-        return '<div style="display:flex;justify-content:' + align + ';"><div style="max-width:75%;background:' + bg + ';color:' + color + ';border-radius:12px;padding:0.65rem 0.9rem;font-size:0.88rem;">' + (m.subject ? '<div style="font-weight:600;margin-bottom:0.25rem;font-size:0.78rem;opacity:0.8;">' + m.subject + '</div>' : '') + m.body + '<div style="font-size:0.7rem;opacity:0.6;margin-top:0.3rem;text-align:right;">' + new Date(m.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) + '</div></div></div>';
-      }).join('') + '</div><div style="padding:0.75rem;border-top:1px solid #eee;display:flex;gap:0.5rem;"><input id="quickMsgInput" type="text" placeholder="Reply to ' + name + '..." style="flex:1;padding:0.65rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.9rem;" onkeydown="if(event.key===\'Enter\')sendQuickMsg(\'' + caregiverId + '\')"><button onclick="sendQuickMsg(\'' + caregiverId + '\')" style="padding:0.65rem 1.25rem;background:#0D2B1F;color:#C9A84C;border:none;border-radius:10px;cursor:pointer;font-weight:600;">Send</button></div>';
+      const bubbles = !msgs || msgs.length === 0
+        ? '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.9rem;">Start the conversation with ' + name + '</div>'
+        : '<div style="flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;">' + msgs.map(m => {
+            const isManager = m.from_manager === true || !m.to_id && !m.to_client_id;
+            const align = isManager ? 'flex-end' : 'flex-start';
+            const bg = isManager ? '#0D2B1F' : '#f0f0f0';
+            const color = isManager ? 'white' : '#333';
+            const t = new Date(m.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+            return '<div style="display:flex;justify-content:' + align + ';"><div style="max-width:75%;background:' + bg + ';color:' + color + ';border-radius:12px;padding:0.65rem 0.9rem;font-size:0.88rem;">' + (m.subject&&m.subject!=='Message'?'<div style="font-weight:600;font-size:0.75rem;opacity:0.7;margin-bottom:0.2rem;">' + m.subject + '</div>':'') + m.body + '<div style="font-size:0.68rem;opacity:0.55;margin-top:0.3rem;text-align:right;">' + t + '</div></div></div>';
+          }).join('') + '</div>';
 
-      // Mark as read
-      await db.from('manager_messages').update({read:true}).eq('from_id', caregiverId);
+      panel.style.flexDirection = 'column';
+      panel.innerHTML = '<div style="font-weight:600;padding:0.75rem 1rem;border-bottom:1px solid #eee;color:#0D2B1F;flex-shrink:0;display:flex;align-items:center;gap:0.5rem;"><span>' + name + '</span></div>' + bubbles + replyBar;
+
+      await db.from('manager_messages').update({read:true}).eq('recipient_name', key);
+      loadMessages();
     }
 
-    async function sendQuickMsg(toId) {
+    async function sendQuickMsg() {
       const input = document.getElementById('quickMsgInput');
       const body = input?.value.trim();
-      if (!body) return;
-      const { data: mgr } = await db.from('profiles').select('id').eq('role','manager').single();
-      await db.from('manager_messages').insert({ from_id: mgr?.id||null, to_id: toId, body, subject: 'Message from Manager' });
+      if (!body || !activeThreadKey) return;
+      input.disabled = true;
+
+      const { error } = await db.from('manager_messages').insert({
+        recipient_name: activeThreadKey,
+        recipient_type: 'manager_reply',
+        from_manager: true,
+        body,
+        subject: 'Message',
+        read: true,
+      });
+
+      input.disabled = false;
+      if (error) { alert('Send failed: ' + error.message); return; }
       input.value = '';
-      const cg = msgCaregiversList.find(c=>c.id===toId);
-      openThread(toId, cg?.full_name||'Caregiver');
+      openThread(encodeURIComponent(activeThreadKey), encodeURIComponent(activeThreadKey));
+      loadMessages();
     }
 
     function openCompose() { document.getElementById('composeModal').style.display='flex'; }
 
     async function sendMessage() {
-      const toId = document.getElementById('composeTo').value;
+      const recipientVal = document.getElementById('composeTo').value;
       const subject = document.getElementById('composeSubject').value.trim();
       const body = document.getElementById('composeBody').value.trim();
-      if (!toId || !body) { alert('Please select a recipient and enter a message.'); return; }
-      const { data: mgr } = await db.from('profiles').select('id').eq('role','manager').single();
-      const { error } = await db.from('manager_messages').insert({ from_id: mgr?.id||null, to_id: toId, subject: subject||'Message', body });
-      if (error) { alert('Error: ' + error.message); return; }
+      if (!recipientVal || !body) { alert('Please select a recipient and enter a message.'); return; }
+
+      const [type, id] = recipientVal.split(':');
+      const recipient = msgRecipients.find(r => r.id === id);
+      const recipientName = recipient?.name.replace(' (Client/Family)','') || 'Unknown';
+
+      const payload = {
+        recipient_name: recipientName,
+        recipient_type: type,
+        from_manager: true,
+        subject: subject || 'Message from Manager',
+        body,
+        read: true,
+      };
+      if (type === 'caregiver') payload.to_id = id;
+      if (type === 'client') payload.to_client_id = id;
+
+      const { error } = await db.from('manager_messages').insert(payload);
+      if (error) { alert('Error sending: ' + error.message); return; }
+
       document.getElementById('composeModal').style.display='none';
       document.getElementById('composeBody').value='';
       document.getElementById('composeSubject').value='';
       await loadMessages();
+      openThread(encodeURIComponent(recipientName), encodeURIComponent(recipientName));
     }
 
     function exportRatesCSV() {
