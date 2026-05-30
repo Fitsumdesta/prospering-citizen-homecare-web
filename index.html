@@ -2139,20 +2139,42 @@
         return;
       }
 
+      // Conflict detection — check if caregiver is already booked at this time
       msg.style.display = 'block';
+      msg.style.background = '#f0f4f0';
+      msg.style.color = '#4e7152';
+      msg.textContent = 'Checking for scheduling conflicts...';
+
+      const newStart = timeToMins(time);
+      const newEnd = newStart + Math.round(durationDecimal * 60);
+
+      const { data: existing } = await db.from('visits')
+        .select('*, clients(full_name)')
+        .eq('caregiver_id', caregiverId)
+        .eq('visit_date', date)
+        .neq('status', 'cancelled');
+
+      if (existing && existing.length > 0) {
+        const conflicts = existing.filter(v => {
+          const vStart = timeToMins(v.start_time);
+          const vEnd = vStart + Math.round((v.duration_hours || 1) * 60);
+          return newStart < vEnd && vStart < newEnd;
+        });
+        if (conflicts.length > 0) {
+          const names = conflicts.map(v => (v.clients?.full_name || 'another client') + ' at ' + fmtTime(v.start_time)).join(', ');
+          msg.style.background = '#f8d7da';
+          msg.style.color = '#721c24';
+          msg.innerHTML = '⚠️ <strong>Scheduling conflict!</strong> This caregiver is already assigned to: ' + names + '.<br><button onclick="forceScheduleVisit()" style="margin-top:0.5rem;padding:0.4rem 1rem;background:#721c24;color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.85rem;">Schedule Anyway</button> <button onclick="document.getElementById(\'scheduleMsg\').style.display=\'none\'" style="margin-top:0.5rem;padding:0.4rem 1rem;background:#eee;color:#333;border:none;border-radius:6px;cursor:pointer;font-size:0.85rem;">Cancel</button>';
+          return;
+        }
+      }
+
       msg.style.background = '#f0f4f0';
       msg.style.color = '#4e7152';
       msg.textContent = 'Saving visit...';
 
-      const { error } = await db.from('visits').insert({
-        client_id: clientId,
-        caregiver_id: caregiverId,
-        visit_date: date,
-        start_time: time,
-        duration_hours: durationDecimal,
-        service_type: service,
-        status: 'scheduled'
-      });
+      pendingVisit = { client_id: clientId, caregiver_id: caregiverId, visit_date: date, start_time: time, duration_hours: durationDecimal, service_type: service, status: 'scheduled' };
+      const { error } = await db.from('visits').insert(pendingVisit);
 
       if (error) {
         msg.style.background = '#f8d7da';
@@ -2168,6 +2190,35 @@
       document.getElementById('scheduleTime').value = '';
       document.getElementById('scheduleDurationHours').value = '';
       document.getElementById('scheduleDurationMins').value = '';
+      setTimeout(() => { msg.style.display = 'none'; }, 3000);
+      await loadVisits();
+    }
+
+    function timeToMins(t) {
+      if (!t) return 0;
+      const [h, m] = t.slice(0,5).split(':');
+      return parseInt(h) * 60 + parseInt(m);
+    }
+
+    let pendingVisit = null;
+
+    async function forceScheduleVisit() {
+      if (!pendingVisit) return;
+      const msg = document.getElementById('scheduleMsg');
+      msg.style.background = '#f0f4f0';
+      msg.style.color = '#4e7152';
+      msg.textContent = 'Saving visit...';
+      const { error } = await db.from('visits').insert(pendingVisit);
+      if (error) {
+        msg.style.background = '#f8d7da';
+        msg.style.color = '#721c24';
+        msg.textContent = 'Error: ' + error.message;
+        return;
+      }
+      pendingVisit = null;
+      msg.style.background = '#d4edda';
+      msg.style.color = '#155724';
+      msg.textContent = '✓ Visit scheduled!';
       setTimeout(() => { msg.style.display = 'none'; }, 3000);
       await loadVisits();
     }
