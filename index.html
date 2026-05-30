@@ -2948,54 +2948,57 @@
     function openCompose() { document.getElementById('composeModal').style.display='flex'; }
 
     async function sendMessage() {
-      const sendBtn = document.getElementById('composeSendBtn');
-      const errorEl = document.getElementById('composeSendError');
-      if (errorEl) errorEl.style.display = 'none';
-      try {
+      // Get all elements fresh — never rely on cached refs
+      const modal    = document.getElementById('composeModal');
+      const toSel    = document.getElementById('composeTo');
+      const subjInp  = document.getElementById('composeSubject');
+      const bodyInp  = document.getElementById('composeBody');
+      const sendBtn  = document.getElementById('composeSendBtn');
+      const errDiv   = document.getElementById('composeSendError');
 
-      const recipientVal = document.getElementById('composeTo').value;
-      const subject = document.getElementById('composeSubject').value.trim();
-      const body = document.getElementById('composeBody').value.trim();
+      const showErr = (msg) => {
+        if (errDiv) { errDiv.textContent = msg; errDiv.style.display = 'block'; }
+        else { window.alert(msg); }
+      };
 
-      if (!recipientVal) { errorEl.textContent = 'Please select a recipient.'; errorEl.style.display = 'block'; return; }
-      if (!body) { errorEl.textContent = 'Please enter a message.'; errorEl.style.display = 'block'; return; }
+      if (!toSel || !toSel.value) { showErr('Please select a recipient.'); return; }
+      if (!bodyInp || !bodyInp.value.trim()) { showErr('Please enter a message.'); return; }
 
-      sendBtn.disabled = true;
-      sendBtn.textContent = 'Sending...';
+      const recipientVal  = toSel.value;
+      const subject       = subjInp ? subjInp.value.trim() : '';
+      const body          = bodyInp.value.trim();
 
-      const parts = recipientVal.split(':');
-      const type = parts[0];
-      const id = parts.slice(1).join(':');
-      const recipient = msgRecipients.find(r => r.id === id);
-      const recipientName = recipient ? recipient.name.replace(' (Client/Family)', '') : 'Unknown';
+      // Parse "type:uuid"
+      const colonIdx    = recipientVal.indexOf(':');
+      const type        = recipientVal.slice(0, colonIdx);
+      const id          = recipientVal.slice(colonIdx + 1);
+      const recipient   = msgRecipients.find(r => r.id === id);
+      const recipientName = recipient
+        ? recipient.name.replace(' (Client/Family)', '')
+        : recipientVal;
+
+      if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Sending...'; }
+      if (errDiv)  { errDiv.style.display = 'none'; }
 
       const { error } = await db.from('manager_messages').insert({
-        recipient_name: recipientName,
-        recipient_type: type,
-        from_manager: true,
-        subject: subject || 'Message from Manager',
-        body: body,
-        read: true,
+        recipient_name:  recipientName,
+        recipient_type:  type,
+        from_manager:    true,
+        subject:         subject || 'Message from Manager',
+        body:            body,
+        read:            true,
       });
 
-      sendBtn.disabled = false;
-      sendBtn.textContent = 'Send Message';
+      if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Message'; }
 
-      if (error) {
-        if (errorEl) { errorEl.textContent = 'Failed to send: ' + error.message; errorEl.style.display = 'block'; }
-        if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Message'; }
-        return;
-      }
+      if (error) { showErr('Send failed: ' + error.message); return; }
 
-      document.getElementById('composeModal').style.display = 'none';
-      document.getElementById('composeBody').value = '';
-      document.getElementById('composeSubject').value = '';
+      if (modal)    modal.style.display = 'none';
+      if (bodyInp)  bodyInp.value  = '';
+      if (subjInp)  subjInp.value  = '';
+
       await loadMessages();
       openThread(encodeURIComponent(recipientName), encodeURIComponent(recipientName));
-      } catch(e) {
-        if (errorEl) { errorEl.textContent = 'Error: ' + e.message; errorEl.style.display = 'block'; }
-        if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Message'; }
-      }
     }
 
     function exportRatesCSV() {
