@@ -996,7 +996,7 @@
           <div class="db-card">
             <div class="db-card-header"><span class="db-card-title">All Clients (47)</span></div>
             <table class="db-table">
-              <thead><tr><th>Name</th><th>Age</th><th>Services</th><th>Caregiver</th><th>Next Visit</th><th>Status</th></tr></thead>
+              <thead><tr><th>Name</th><th>Age</th><th>Services</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody id="clientTableBody">
                 <tr><td><strong>Dorothy Reynolds</strong></td><td>78</td><td>Personal Care, Dementia</td><td>Maria Santos</td><td>Today 8:00 AM</td><td><span class="badge badge-green">Active</span></td></tr>
                 <tr><td><strong>Robert Mitchell</strong></td><td>82</td><td>Companion, Meals</td><td>James Thompson</td><td>Today 9:30 AM</td><td><span class="badge badge-green">Active</span></td></tr>
@@ -1043,7 +1043,7 @@
           <div class="db-card">
             <div class="db-card-header"><span class="db-card-title">Caregiver Roster (18)</span></div>
             <table class="db-table">
-              <thead><tr><th>Name</th><th>Cert.</th><th>Clients</th><th>CPR Exp.</th><th>Rating</th><th>Status</th></tr></thead>
+              <thead><tr><th>Name</th><th>Phone</th><th>Address</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody id="caregiverTableBody">
                 <tr><td><strong>Maria Santos</strong></td><td>CNA</td><td>3</td><td>Dec 2025</td><td>⭐ 4.9</td><td><span class="badge badge-green">Active</span></td></tr>
                 <tr><td><strong>James Thompson</strong></td><td>HHA</td><td>2</td><td>Mar 2026</td><td>⭐ 4.7</td><td><span class="badge badge-green">Active</span></td></tr>
@@ -1910,6 +1910,43 @@
     </div>
   </div>
 
+  <!-- Edit Client Modal -->
+  <div id="editClientModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:16px;padding:2rem;width:100%;max-width:520px;margin:1rem;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <h3 style="color:#0D2B1F;margin:0;font-size:1.3rem;">✏️ Edit Client</h3>
+        <button onclick="closeEditClientModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">✕</button>
+      </div>
+      <div class="db-form-group"><label>Full Name *</label><input type="text" id="editClientName" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+      <div class="db-form-group"><label>Phone</label><input type="tel" id="editClientPhone" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+      <div class="db-form-group"><label>Address</label><input type="text" id="editClientAddress" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+      <div class="db-form-group"><label>Services / Notes</label><input type="text" id="editClientNotes" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+      <div class="db-form-group"><label>Emergency Contact</label><input type="text" id="editClientEmergency" placeholder="Name — Relationship — Phone" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+      <div style="display:flex;gap:0.75rem;margin-top:1.25rem;">
+        <button onclick="deleteClient()" style="padding:0.85rem 1rem;border:1.5px solid #dc3545;border-radius:10px;background:white;color:#dc3545;cursor:pointer;font-size:0.9rem;font-weight:600;">🗑 Delete</button>
+        <button onclick="closeEditClientModal()" style="flex:1;padding:0.85rem;border:1.5px solid #ccc;border-radius:10px;background:white;cursor:pointer;font-size:1rem;">Cancel</button>
+        <button onclick="saveEditClient()" style="flex:2;padding:0.85rem;border:none;border-radius:10px;background:#0D2B1F;color:#C9A84C;font-weight:700;cursor:pointer;font-size:1rem;">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Caregiver Modal -->
+  <div id="editCaregiverModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:16px;padding:2rem;width:100%;max-width:520px;margin:1rem;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <h3 style="color:#0D2B1F;margin:0;font-size:1.3rem;">✏️ Edit Caregiver</h3>
+        <button onclick="closeEditCaregiverModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">✕</button>
+      </div>
+      <div class="db-form-group"><label>Full Name *</label><input type="text" id="editCgName" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+      <div class="db-form-group"><label>Phone</label><input type="tel" id="editCgPhone" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+      <div class="db-form-group"><label>Home Address <span style="font-size:0.8rem;color:#888;">(used for distance matching)</span></label><input type="text" id="editCgAddress" placeholder="e.g. 123 Main St, Fairfax VA 22030" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+      <div style="display:flex;gap:0.75rem;margin-top:1.25rem;">
+        <button onclick="closeEditCaregiverModal()" style="flex:1;padding:0.85rem;border:1.5px solid #ccc;border-radius:10px;background:white;cursor:pointer;font-size:1rem;">Cancel</button>
+        <button onclick="saveEditCaregiver()" style="flex:2;padding:0.85rem;border:none;border-radius:10px;background:#0D2B1F;color:#C9A84C;font-weight:700;cursor:pointer;font-size:1rem;">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
   <!-- AI CHAT WIDGET -->
   <button class="chat-fab" id="chatFab" title="Chat with us">
     💬
@@ -2096,7 +2133,8 @@
         tbody.innerHTML = '';
         data.forEach(c => {
           const row = document.createElement('tr');
-          row.innerHTML = '<td><strong>' + c.full_name + '</strong></td><td>' + (c.date_of_birth ? new Date().getFullYear() - new Date(c.date_of_birth).getFullYear() : '—') + '</td><td>' + (c.care_notes || 'Personal Care') + '</td><td>Unassigned</td><td>Pending</td><td><span class="badge badge-green">Active</span></td>';
+          const age = c.date_of_birth ? new Date().getFullYear() - new Date(c.date_of_birth).getFullYear() : '—';
+          row.innerHTML = '<td><strong>' + c.full_name + '</strong></td><td>' + age + '</td><td>' + (c.care_notes || '—') + '</td><td>' + (c.phone || '—') + '</td><td><span class="badge badge-green">Active</span></td><td><button onclick="openEditClient(' + JSON.stringify(c).replace(/"/g,"&quot;") + ')" style="padding:0.25rem 0.65rem;background:#f0f4f0;border:1px solid #c9e6d4;border-radius:6px;cursor:pointer;font-size:0.78rem;color:#2d6a4f;">✏️ Edit</button></td>';
           tbody.appendChild(row);
         });
       }
@@ -2115,7 +2153,7 @@
         tbody.innerHTML = '';
         data.forEach(cg => {
           const row = document.createElement('tr');
-          row.innerHTML = '<td><strong>' + cg.full_name + '</strong></td><td>HHA</td><td>—</td><td>—</td><td>—</td><td><span class="badge badge-green">Active</span></td>';
+          row.innerHTML = '<td><strong>' + cg.full_name + '</strong></td><td>' + (cg.phone || '—') + '</td><td>' + (cg.address || '—') + '</td><td><span class="badge badge-green">Active</span></td><td><button onclick="openEditCaregiver(' + JSON.stringify(cg).replace(/"/g,"&quot;") + ')" style="padding:0.25rem 0.65rem;background:#f0f4f0;border:1px solid #c9e6d4;border-radius:6px;cursor:pointer;font-size:0.78rem;color:#2d6a4f;">✏️ Edit</button></td>';
           tbody.appendChild(row);
         });
       }
@@ -2460,6 +2498,70 @@
 
       calVisitsData = data || [];
       renderCalendar();
+    }
+
+    // ── Edit Client ──
+    let editingClientId = null;
+    function openEditClient(c) {
+      editingClientId = c.id;
+      document.getElementById('editClientName').value = c.full_name || '';
+      document.getElementById('editClientPhone').value = c.phone || '';
+      document.getElementById('editClientAddress').value = c.address || '';
+      document.getElementById('editClientNotes').value = c.care_notes || '';
+      document.getElementById('editClientEmergency').value = c.emergency_contact_name || '';
+      document.getElementById('editClientModal').style.display = 'flex';
+    }
+    function closeEditClientModal() {
+      document.getElementById('editClientModal').style.display = 'none';
+      editingClientId = null;
+    }
+    async function saveEditClient() {
+      const name = document.getElementById('editClientName').value.trim();
+      if (!name) { alert('Name is required'); return; }
+      const { error } = await db.from('clients').update({
+        full_name: name,
+        phone: document.getElementById('editClientPhone').value.trim() || null,
+        address: document.getElementById('editClientAddress').value.trim() || null,
+        care_notes: document.getElementById('editClientNotes').value.trim() || null,
+        emergency_contact_name: document.getElementById('editClientEmergency').value.trim() || null,
+        lat: null, lng: null, // reset geocache when address changes
+      }).eq('id', editingClientId);
+      if (error) { alert('Error saving: ' + error.message); return; }
+      closeEditClientModal();
+      await loadClients();
+    }
+    async function deleteClient() {
+      if (!confirm('Permanently delete this client? This cannot be undone.')) return;
+      await db.from('clients').delete().eq('id', editingClientId);
+      closeEditClientModal();
+      await loadClients();
+    }
+
+    // ── Edit Caregiver ──
+    let editingCaregiverId = null;
+    function openEditCaregiver(cg) {
+      editingCaregiverId = cg.id;
+      document.getElementById('editCgName').value = cg.full_name || '';
+      document.getElementById('editCgPhone').value = cg.phone || '';
+      document.getElementById('editCgAddress').value = cg.address || '';
+      document.getElementById('editCaregiverModal').style.display = 'flex';
+    }
+    function closeEditCaregiverModal() {
+      document.getElementById('editCaregiverModal').style.display = 'none';
+      editingCaregiverId = null;
+    }
+    async function saveEditCaregiver() {
+      const name = document.getElementById('editCgName').value.trim();
+      if (!name) { alert('Name is required'); return; }
+      const { error } = await db.from('profiles').update({
+        full_name: name,
+        phone: document.getElementById('editCgPhone').value.trim() || null,
+        address: document.getElementById('editCgAddress').value.trim() || null,
+        lat: null, lng: null,
+      }).eq('id', editingCaregiverId);
+      if (error) { alert('Error saving: ' + error.message); return; }
+      closeEditCaregiverModal();
+      await loadCaregivers();
     }
 
     function exportRatesCSV() {
