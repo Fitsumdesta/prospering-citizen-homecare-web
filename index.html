@@ -1092,23 +1092,21 @@
                 <div class="db-form-group"><label>Caregiver</label><select id="scheduleCaregiver"><option value="">Loading caregivers...</option></select></div>
               </div>
               <div class="db-form-row">
-                <div class="db-form-group"><label>Date</label><input type="date" /></div>
-                <div class="db-form-group"><label>Time</label><input type="time" /></div>
+                <div class="db-form-group"><label>Date</label><input type="date" id="scheduleDate" /></div>
+                <div class="db-form-group"><label>Time</label><input type="time" id="scheduleTime" /></div>
               </div>
               <div class="db-form-row">
-                <div class="db-form-group"><label>Duration</label><select><option>1 hour</option><option>2 hours</option><option>3 hours</option><option>4 hours</option></select></div>
-                <div class="db-form-group"><label>Service Type</label><select><option>Personal Care</option><option>Companionship</option><option>Dementia Care</option><option>Meal Preparation</option></select></div>
+                <div class="db-form-group"><label>Duration</label><select id="scheduleDuration"><option value="1">1 hour</option><option value="2">2 hours</option><option value="3">3 hours</option><option value="4">4 hours</option><option value="8">8 hours</option></select></div>
+                <div class="db-form-group"><label>Service Type</label><select id="scheduleService"><option>Personal Care</option><option>Companionship</option><option>Dementia Care</option><option>Meal Preparation</option><option>Post-Hospital Care</option><option>Live-In Care</option></select></div>
               </div>
-              <button class="db-btn db-btn-primary">📅 Schedule Visit</button>
+              <div id="scheduleMsg" style="display:none;padding:0.75rem;border-radius:10px;margin-bottom:0.75rem;font-size:0.9rem;"></div>
+              <button class="db-btn db-btn-primary" onclick="scheduleVisit()">📅 Schedule Visit</button>
             </div>
           </div>
           <div class="db-card">
-            <div class="db-card-header"><span class="db-card-title">Today's Full Schedule — May 16</span></div>
-            <div class="schedule-list">
-              <div class="schedule-item"><span class="sched-time">8:00 AM</span><div class="sched-dot green"></div><div class="sched-info"><div class="sched-title">Dorothy Reynolds → Maria Santos</div><div class="sched-sub">Personal Care · 3hrs · <span class="badge badge-green">Confirmed</span></div></div></div>
-              <div class="schedule-item"><span class="sched-time">9:30 AM</span><div class="sched-dot green"></div><div class="sched-info"><div class="sched-title">Robert Mitchell → James Thompson</div><div class="sched-sub">Companion · 2hrs · <span class="badge badge-green">Confirmed</span></div></div></div>
-              <div class="schedule-item"><span class="sched-time">11:00 AM</span><div class="sched-dot gold"></div><div class="sched-info"><div class="sched-title">Susan Patterson → Angela Williams</div><div class="sched-sub">Dementia Care · 4hrs · <span class="badge badge-gold">In Progress</span></div></div></div>
-              <div class="schedule-item"><span class="sched-time">2:00 PM</span><div class="sched-dot red"></div><div class="sched-info"><div class="sched-title">Frank Lewis — UNASSIGNED</div><div class="sched-sub">Post-Hospital · <span class="badge badge-red">Needs Coverage</span></div></div></div>
+            <div class="db-card-header"><span class="db-card-title" id="scheduleListTitle">Upcoming Scheduled Visits</span><button class="db-btn db-btn-outline" style="font-size:0.78rem;padding:0.4rem 0.9rem;" onclick="loadVisits()">↻ Refresh</button></div>
+            <div class="schedule-list" id="visitScheduleList">
+              <div style="padding:1.5rem;text-align:center;color:#888;">Loading visits...</div>
             </div>
           </div>
         </div>
@@ -2110,6 +2108,86 @@
       }
     }
 
+    async function scheduleVisit() {
+      const clientId = document.getElementById('scheduleClient').value;
+      const caregiverId = document.getElementById('scheduleCaregiver').value;
+      const date = document.getElementById('scheduleDate').value;
+      const time = document.getElementById('scheduleTime').value;
+      const duration = document.getElementById('scheduleDuration').value;
+      const service = document.getElementById('scheduleService').value;
+      const msg = document.getElementById('scheduleMsg');
+
+      if (!clientId || !caregiverId || !date || !time) {
+        msg.style.display = 'block';
+        msg.style.background = '#fff3cd';
+        msg.style.color = '#856404';
+        msg.textContent = 'Please fill in all required fields: Client, Caregiver, Date, and Time.';
+        return;
+      }
+
+      msg.style.display = 'block';
+      msg.style.background = '#f0f4f0';
+      msg.style.color = '#4e7152';
+      msg.textContent = 'Saving visit...';
+
+      const { error } = await db.from('visits').insert({
+        client_id: clientId,
+        caregiver_id: caregiverId,
+        visit_date: date,
+        start_time: time,
+        duration_hours: parseInt(duration),
+        service_type: service,
+        status: 'scheduled'
+      });
+
+      if (error) {
+        msg.style.background = '#f8d7da';
+        msg.style.color = '#721c24';
+        msg.textContent = 'Error: ' + error.message;
+        return;
+      }
+
+      msg.style.background = '#d4edda';
+      msg.style.color = '#155724';
+      msg.textContent = '✓ Visit scheduled successfully!';
+      document.getElementById('scheduleDate').value = '';
+      document.getElementById('scheduleTime').value = '';
+      setTimeout(() => { msg.style.display = 'none'; }, 3000);
+      await loadVisits();
+    }
+
+    async function loadVisits() {
+      const list = document.getElementById('visitScheduleList');
+      if (!list) return;
+      const { data, error } = await db.from('visits')
+        .select('*, clients(full_name), profiles(full_name)')
+        .order('visit_date', { ascending: true })
+        .order('start_time', { ascending: true })
+        .limit(20);
+
+      if (error || !data || data.length === 0) {
+        list.innerHTML = '<div style="padding:1.5rem;text-align:center;color:#888;">' + (error ? 'Error loading visits.' : 'No visits scheduled yet.') + '</div>';
+        return;
+      }
+
+      list.innerHTML = '';
+      data.forEach(v => {
+        const timeStr = v.start_time ? v.start_time.slice(0,5) : '—';
+        const [h, m] = timeStr.split(':');
+        const hour = parseInt(h);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayTime = (hour > 12 ? hour - 12 : hour || 12) + ':' + m + ' ' + ampm;
+        const clientName = v.clients?.full_name || 'Unknown Client';
+        const caregiverName = v.profiles?.full_name || 'Unassigned';
+        const statusColor = v.status === 'completed' ? 'green' : v.status === 'in_progress' ? 'gold' : v.status === 'cancelled' ? 'red' : 'green';
+        const badge = '<span class="badge badge-' + statusColor + '">' + (v.status || 'Scheduled') + '</span>';
+        const item = document.createElement('div');
+        item.className = 'schedule-item';
+        item.innerHTML = '<span class="sched-time">' + displayTime + '</span><div class="sched-dot ' + statusColor + '"></div><div class="sched-info"><div class="sched-title">' + clientName + ' → ' + caregiverName + '</div><div class="sched-sub">' + v.service_type + ' · ' + v.duration_hours + 'hr · ' + v.visit_date + ' · ' + badge + '</div></div>';
+        list.appendChild(item);
+      });
+    }
+
     function exportRatesCSV() {
       const rows = [['Service Type','Standard Rate','Weekend Rate','Holiday Rate'],['Companion / Homemaker','$22/hr','$26/hr','$30/hr'],['Personal Care Aide','$25/hr','$29/hr','$34/hr'],['Dementia / Memory Care','$28/hr','$32/hr','$37/hr'],['Live-In Care','$220/day','$240/day','$265/day'],['Overnight Care','$160/night','$180/night','$200/night']];
       downloadCSV(rows, 'PC_Homecare_Rates.csv');
@@ -2195,7 +2273,7 @@
       const dashMap = { manager:'managerDash', caregiver:'caregiverDash', client:'clientDash' };
       document.getElementById(dashMap[currentRole]).classList.add('active');
       document.body.style.overflow = 'hidden';
-      if (currentRole === 'manager') { loadClients(); loadCaregivers(); }
+      if (currentRole === 'manager') { loadClients(); loadCaregivers(); loadVisits(); }
     }
 
     document.getElementById('loginPassword').addEventListener('keydown', function(e) {
