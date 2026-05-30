@@ -1104,9 +1104,21 @@
             </div>
           </div>
           <div class="db-card">
-            <div class="db-card-header"><span class="db-card-title" id="scheduleListTitle">Upcoming Scheduled Visits</span><button class="db-btn db-btn-outline" style="font-size:0.78rem;padding:0.4rem 0.9rem;" onclick="loadVisits()">↻ Refresh</button></div>
-            <div class="schedule-list" id="visitScheduleList">
-              <div style="padding:1.5rem;text-align:center;color:#888;">Loading visits...</div>
+            <div class="db-card-header" style="flex-wrap:wrap;gap:0.5rem;">
+              <span class="db-card-title">📅 Weekly Schedule</span>
+              <div style="display:flex;align-items:center;gap:0.5rem;margin-left:auto;">
+                <button class="db-btn db-btn-outline" style="font-size:0.78rem;padding:0.4rem 0.8rem;" onclick="changeCalWeek(-1)">‹ Prev</button>
+                <span id="calWeekLabel" style="font-size:0.85rem;font-weight:600;color:#333;min-width:160px;text-align:center;"></span>
+                <button class="db-btn db-btn-outline" style="font-size:0.78rem;padding:0.4rem 0.8rem;" onclick="changeCalWeek(1)">Next ›</button>
+                <button class="db-btn db-btn-outline" style="font-size:0.78rem;padding:0.4rem 0.8rem;" onclick="goCalToday()">Today</button>
+                <button class="db-btn db-btn-outline" style="font-size:0.78rem;padding:0.4rem 0.9rem;" onclick="loadVisits()">↻</button>
+              </div>
+            </div>
+            <!-- Client color legend -->
+            <div id="calLegend" style="display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.75rem 1.25rem;border-bottom:1px solid #e8eaed;"></div>
+            <!-- Calendar grid -->
+            <div style="overflow-x:auto;">
+              <div id="calGrid" style="min-width:700px;"></div>
             </div>
           </div>
         </div>
@@ -2154,44 +2166,128 @@
       msg.textContent = '✓ Visit scheduled successfully!';
       document.getElementById('scheduleDate').value = '';
       document.getElementById('scheduleTime').value = '';
+      document.getElementById('scheduleDurationHours').value = '';
+      document.getElementById('scheduleDurationMins').value = '';
       setTimeout(() => { msg.style.display = 'none'; }, 3000);
       await loadVisits();
     }
 
+    const CLIENT_COLORS = [
+      { bg:'#dbeafe', border:'#3b82f6', text:'#1e40af' },
+      { bg:'#dcfce7', border:'#22c55e', text:'#15803d' },
+      { bg:'#fce7f3', border:'#ec4899', text:'#9d174d' },
+      { bg:'#fff7ed', border:'#f97316', text:'#c2410c' },
+      { bg:'#f3e8ff', border:'#a855f7', text:'#7e22ce' },
+      { bg:'#fef9c3', border:'#eab308', text:'#854d0e' },
+      { bg:'#e0f2fe', border:'#0ea5e9', text:'#0369a1' },
+      { bg:'#fce7f3', border:'#f43f5e', text:'#9f1239' },
+      { bg:'#d1fae5', border:'#10b981', text:'#065f46' },
+      { bg:'#ede9fe', border:'#8b5cf6', text:'#5b21b6' },
+    ];
+    let calWeekOffset = 0;
+    let calVisitsData = [];
+
+    function getWeekDates(offset) {
+      const today = new Date();
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - today.getDay() + 1 + offset * 7);
+      return Array.from({length: 7}, (_, i) => {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        return d;
+      });
+    }
+
+    function fmt(d) { return d.toISOString().slice(0,10); }
+
+    function fmtTime(t) {
+      if (!t) return '—';
+      const [h, m] = t.slice(0,5).split(':');
+      const hr = parseInt(h);
+      return (hr > 12 ? hr-12 : hr||12) + ':' + m + ' ' + (hr >= 12 ? 'PM' : 'AM');
+    }
+
+    function changeCalWeek(dir) { calWeekOffset += dir; renderCalendar(); }
+    function goCalToday() { calWeekOffset = 0; renderCalendar(); }
+
+    function renderCalendar() {
+      const days = getWeekDates(calWeekOffset);
+      const label = document.getElementById('calWeekLabel');
+      const grid = document.getElementById('calGrid');
+      const legend = document.getElementById('calLegend');
+      if (!grid) return;
+
+      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const start = days[0], end = days[6];
+      label.textContent = monthNames[start.getMonth()] + ' ' + start.getDate() + ' – ' + monthNames[end.getMonth()] + ' ' + end.getDate() + ', ' + end.getFullYear();
+
+      // Build client → color map
+      const clientColorMap = {};
+      let colorIdx = 0;
+      calVisitsData.forEach(v => {
+        const cid = v.client_id;
+        if (cid && !clientColorMap[cid]) { clientColorMap[cid] = CLIENT_COLORS[colorIdx % CLIENT_COLORS.length]; colorIdx++; }
+      });
+
+      // Legend
+      const legendClients = {};
+      calVisitsData.forEach(v => { if (v.client_id) legendClients[v.client_id] = v.clients?.full_name || 'Unknown'; });
+      legend.innerHTML = Object.entries(legendClients).map(([id, name]) => {
+        const c = clientColorMap[id] || CLIENT_COLORS[0];
+        return '<span style="display:flex;align-items:center;gap:0.4rem;font-size:0.78rem;"><span style="width:12px;height:12px;border-radius:3px;background:' + c.border + ';display:inline-block;"></span>' + name + '</span>';
+      }).join('');
+
+      // Day headers
+      const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const today = fmt(new Date());
+      let html = '<div style="display:grid;grid-template-columns:60px repeat(7,1fr);border-left:1px solid #e8eaed;border-top:1px solid #e8eaed;">';
+      html += '<div style="border-right:1px solid #e8eaed;border-bottom:1px solid #e8eaed;background:#f8f9fa;"></div>';
+      days.forEach((d, i) => {
+        const isToday = fmt(d) === today;
+        html += '<div style="text-align:center;padding:0.5rem 0.25rem;border-right:1px solid #e8eaed;border-bottom:1px solid #e8eaed;background:' + (isToday ? '#f0f4f0' : '#f8f9fa') + ';"><div style="font-size:0.72rem;color:#888;">' + dayNames[i] + '</div><div style="font-size:1rem;font-weight:' + (isToday ? '700' : '400') + ';color:' + (isToday ? '#4e7152' : '#333') + ';">' + d.getDate() + '</div></div>';
+      });
+
+      // Time rows 7am–8pm
+      for (let hr = 7; hr <= 20; hr++) {
+        const timeLabel = (hr > 12 ? hr-12 : hr) + ':00 ' + (hr >= 12 ? 'PM' : 'AM');
+        html += '<div style="border-right:1px solid #e8eaed;border-bottom:1px solid #e8eaed;padding:0.3rem 0.4rem;font-size:0.68rem;color:#aaa;text-align:right;background:#fafafa;">' + timeLabel + '</div>';
+        days.forEach(d => {
+          const dateStr = fmt(d);
+          const cellVisits = calVisitsData.filter(v => v.visit_date === dateStr && v.start_time && parseInt(v.start_time.slice(0,2)) === hr);
+          let cellContent = '';
+          cellVisits.forEach(v => {
+            const c = clientColorMap[v.client_id] || CLIENT_COLORS[0];
+            const totalMins = Math.round((v.duration_hours || 1) * 60);
+            const dispHrs = Math.floor(totalMins/60), dispMins = totalMins%60;
+            const durStr = dispHrs > 0 && dispMins > 0 ? dispHrs+'h '+dispMins+'m' : dispHrs > 0 ? dispHrs+'h' : dispMins+'m';
+            cellContent += '<div style="background:' + c.bg + ';border-left:3px solid ' + c.border + ';border-radius:4px;padding:0.2rem 0.4rem;margin:1px 2px;font-size:0.72rem;color:' + c.text + ';overflow:hidden;cursor:default;" title="' + (v.clients?.full_name||'') + ' → ' + (v.profiles?.full_name||'') + ' · ' + v.service_type + ' · ' + durStr + '"><strong>' + (v.clients?.full_name||'?').split(' ')[0] + '</strong><br>' + fmtTime(v.start_time) + ' · ' + durStr + '</div>';
+          });
+          html += '<div style="border-right:1px solid #e8eaed;border-bottom:1px solid #e8eaed;min-height:44px;vertical-align:top;">' + (cellContent || '') + '</div>';
+        });
+      }
+      html += '</div>';
+      grid.innerHTML = html;
+    }
+
     async function loadVisits() {
-      const list = document.getElementById('visitScheduleList');
-      if (!list) return;
+      const grid = document.getElementById('calGrid');
+      if (!grid) return;
+      grid.innerHTML = '<div style="padding:2rem;text-align:center;color:#888;">Loading...</div>';
+
+      const days = getWeekDates(calWeekOffset);
+      // Load 3 weeks around current view for smooth navigation
+      const from = fmt(getWeekDates(calWeekOffset - 1)[0]);
+      const to = fmt(getWeekDates(calWeekOffset + 1)[6]);
+
       const { data, error } = await db.from('visits')
         .select('*, clients(full_name), profiles(full_name)')
+        .gte('visit_date', from)
+        .lte('visit_date', to)
         .order('visit_date', { ascending: true })
-        .order('start_time', { ascending: true })
-        .limit(20);
+        .order('start_time', { ascending: true });
 
-      if (error || !data || data.length === 0) {
-        list.innerHTML = '<div style="padding:1.5rem;text-align:center;color:#888;">' + (error ? 'Error loading visits.' : 'No visits scheduled yet.') + '</div>';
-        return;
-      }
-
-      list.innerHTML = '';
-      data.forEach(v => {
-        const timeStr = v.start_time ? v.start_time.slice(0,5) : '—';
-        const [h, m] = timeStr.split(':');
-        const hour = parseInt(h);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const displayTime = (hour > 12 ? hour - 12 : hour || 12) + ':' + m + ' ' + ampm;
-        const clientName = v.clients?.full_name || 'Unknown Client';
-        const caregiverName = v.profiles?.full_name || 'Unassigned';
-        const statusColor = v.status === 'completed' ? 'green' : v.status === 'in_progress' ? 'gold' : v.status === 'cancelled' ? 'red' : 'green';
-        const badge = '<span class="badge badge-' + statusColor + '">' + (v.status || 'Scheduled') + '</span>';
-        const item = document.createElement('div');
-        item.className = 'schedule-item';
-        const totalMins = Math.round((v.duration_hours || 0) * 60);
-        const dispHrs = Math.floor(totalMins / 60);
-        const dispMins = totalMins % 60;
-        const durStr = dispHrs > 0 && dispMins > 0 ? dispHrs + 'hr ' + dispMins + 'min' : dispHrs > 0 ? dispHrs + 'hr' : dispMins + 'min';
-        item.innerHTML = '<span class="sched-time">' + displayTime + '</span><div class="sched-dot ' + statusColor + '"></div><div class="sched-info"><div class="sched-title">' + clientName + ' → ' + caregiverName + '</div><div class="sched-sub">' + v.service_type + ' · ' + durStr + ' · ' + v.visit_date + ' · ' + badge + '</div></div>';
-        list.appendChild(item);
-      });
+      calVisitsData = data || [];
+      renderCalendar();
     }
 
     function exportRatesCSV() {
