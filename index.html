@@ -2142,7 +2142,7 @@
       const phone = document.getElementById('newCgPhone').value.trim();
       const cert = document.getElementById('newCgCert').value;
       try {
-        const res = await fetch('/.netlify/functions/add-caregiver', {
+        const res = await fetch('/api/add-caregiver', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ full_name: name, email: email || null, phone: phone || null, certification: cert }),
