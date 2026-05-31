@@ -988,11 +988,7 @@
             <table class="db-table">
               <thead><tr><th>Name</th><th>Age</th><th>Services</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody id="clientTableBody">
-                <tr><td><strong>Dorothy Reynolds</strong></td><td>78</td><td>Personal Care, Dementia</td><td>Maria Santos</td><td>Today 8:00 AM</td><td><span class="badge badge-green">Active</span></td></tr>
-                <tr><td><strong>Robert Mitchell</strong></td><td>82</td><td>Companion, Meals</td><td>James Thompson</td><td>Today 9:30 AM</td><td><span class="badge badge-green">Active</span></td></tr>
-                <tr><td><strong>Susan Patterson</strong></td><td>74</td><td>Dementia Care</td><td>Angela Williams</td><td>Today 11:00 AM</td><td><span class="badge badge-green">Active</span></td></tr>
-                <tr><td><strong>Frank Lewis</strong></td><td>69</td><td>Post-Hospital Care</td><td>Unassigned</td><td>Today 2:00 PM</td><td><span class="badge badge-red">Needs Coverage</span></td></tr>
-                <tr><td><strong>Helen Carter</strong></td><td>88</td><td>Live-In Care</td><td>TBD</td><td>Pending intake</td><td><span class="badge badge-gold">Intake</span></td></tr>
+                <tr><td colspan="6" style="text-align:center;color:#888;padding:1rem;">Loading clients...</td></tr>
               </tbody>
             </table>
           </div>
@@ -1035,10 +1031,7 @@
             <table class="db-table">
               <thead><tr><th>Name</th><th>Phone</th><th>Address</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody id="caregiverTableBody">
-                <tr><td><strong>Maria Santos</strong></td><td>CNA</td><td>3</td><td>Dec 2025</td><td>⭐ 4.9</td><td><span class="badge badge-green">Active</span></td></tr>
-                <tr><td><strong>James Thompson</strong></td><td>HHA</td><td>2</td><td>Mar 2026</td><td>⭐ 4.7</td><td><span class="badge badge-green">Active</span></td></tr>
-                <tr><td><strong>Angela Williams</strong></td><td>CNA + Dementia</td><td>3</td><td>May 2025</td><td>⭐ 4.8</td><td><span class="badge badge-gold">CPR Expiring</span></td></tr>
-                <tr><td><strong>John Brown</strong></td><td>HHA</td><td>2</td><td>Aug 2025</td><td>⭐ 4.5</td><td><span class="badge badge-red">Sick Leave</span></td></tr>
+                <tr><td colspan="5" style="text-align:center;color:#888;padding:1rem;">Loading caregivers...</td></tr>
               </tbody>
             </table>
           </div>
@@ -2131,9 +2124,16 @@
     const db = supabase.createClient(SUPA_URL, SUPA_KEY);
 
     async function loadClients() {
-      const { data, error } = await db.from('clients').select('*').order('created_at', { ascending: false });
-      if (error || !data) return;
       const tbody = document.getElementById('clientTableBody');
+      const { data, error } = await db.from('clients').select('*').order('created_at', { ascending: false });
+      if (error) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#e74c3c;padding:1rem;">Error loading clients: ' + error.message + '</td></tr>';
+        return;
+      }
+      if (!data || data.length === 0) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#888;padding:1rem;">No clients added yet. Click + Add Client to get started.</td></tr>';
+        return;
+      }
       if (tbody) {
         tbody.innerHTML = '';
         data.forEach(c => {
@@ -2151,9 +2151,16 @@
     }
 
     async function loadCaregivers() {
-      const { data, error } = await db.from('profiles').select('*').eq('role', 'caregiver').order('created_at', { ascending: false });
-      if (error || !data) return;
       const tbody = document.getElementById('caregiverTableBody');
+      const { data, error } = await db.from('profiles').select('*').eq('role', 'caregiver').order('created_at', { ascending: false });
+      if (error) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#e74c3c;padding:1rem;">Error loading caregivers: ' + error.message + '</td></tr>';
+        return;
+      }
+      if (!data || data.length === 0) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;padding:1rem;">No caregivers added yet. Click + Add Caregiver to get started.</td></tr>';
+        return;
+      }
       if (tbody) {
         tbody.innerHTML = '';
         data.forEach(cg => {
