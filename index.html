@@ -409,7 +409,8 @@
     .profile-name { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 600; color: var(--charcoal); }
     .profile-role { font-size: 0.78rem; color: var(--mid); margin-top: 0.15rem; }
     .profile-edit { margin-left: auto; }
-    .notif-dot { display: inline-block; min-width: 18px; height: 18px; border-radius: 9px; background: #e74c3c; margin-left: 0.4rem; vertical-align: middle; font-size: 0.65rem; font-weight: 700; color: white; text-align: center; line-height: 18px; padding: 0 3px; }
+    .notif-dot { display: inline-block; min-width: 18px; height: 18px; border-radius: 9px; background: #e74c3c; margin-left: 0.5rem; vertical-align: middle; font-size: 0.65rem; font-weight: 700; color: white; text-align: center; line-height: 18px; padding: 0 4px; animation: pulse-badge 2s infinite; }
+    @keyframes pulse-badge { 0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(231,76,60,0.4);} 50%{transform:scale(1.15);box-shadow:0 0 0 5px rgba(231,76,60,0);} }
     .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
     /* ── PHASE 4: MOBILE CAREGIVER / CLIENT ── */
@@ -944,7 +945,7 @@
         <button class="db-nav-item" onclick="showPanel('m','billing',this)"><span class="db-nav-icon">💳</span> Billing</button>
         <button class="db-nav-item" onclick="showPanel('m','compliance',this)"><span class="db-nav-icon">📋</span> Compliance</button>
         <button class="db-nav-item" onclick="showPanel('m','reports',this)"><span class="db-nav-icon">📈</span> Reports</button>
-        <button class="db-nav-item" onclick="showPanel('m','messages',this);clearMsgBadge('m')"><span class="db-nav-icon">💬</span> Messages <span class="notif-dot" id="mMsgBadge" style="display:none;"></span></button>
+        <button class="db-nav-item" id="mMsgNavBtn" onclick="showPanel('m','messages',this);clearMsgBadge('m')"><span class="db-nav-icon">💬</span> Messages <span class="notif-dot" id="mMsgBadge" style="display:none;"></span></button>
         <div class="db-nav-divider"></div>
         <button class="db-nav-item" onclick="showPanel('m','settings',this)"><span class="db-nav-icon">⚙️</span> Settings</button>
         <button class="db-nav-item" onclick="showPanel('m','support',this)"><span class="db-nav-icon">🎧</span> Support</button>
@@ -1374,7 +1375,7 @@
         <button class="db-nav-item" onclick="showPanel('c','cincident',this)"><span class="db-nav-icon">⚠️</span> Report Incident</button>
         <div class="db-nav-divider"></div>
         <div class="db-nav-section">Me</div>
-        <button class="db-nav-item" onclick="showPanel('c','cmessages',this);clearMsgBadge('c')"><span class="db-nav-icon">💬</span> Messages <span class="notif-dot" id="cMsgBadge" style="display:none;"></span></button>
+        <button class="db-nav-item" id="cMsgNavBtn" onclick="showPanel('c','cmessages',this);clearMsgBadge('c')"><span class="db-nav-icon">💬</span> Messages <span class="notif-dot" id="cMsgBadge" style="display:none;"></span></button>
         <button class="db-nav-item" onclick="showPanel('c','cpay',this)"><span class="db-nav-icon">💵</span> Pay &amp; Hours</button>
         <button class="db-nav-item" onclick="showPanel('c','ctraining',this)"><span class="db-nav-icon">📚</span> Training</button>
         <button class="db-nav-item" onclick="showPanel('c','cprofile',this)"><span class="db-nav-icon">👤</span> My Profile</button>
@@ -1682,7 +1683,7 @@
         <div class="db-nav-divider"></div>
         <div class="db-nav-section">Account</div>
         <button class="db-nav-item" onclick="showPanel('cl','clbilling',this)"><span class="db-nav-icon">💳</span> Billing</button>
-        <button class="db-nav-item" onclick="showPanel('cl','clmessages',this);clearMsgBadge('cl')"><span class="db-nav-icon">💬</span> Messages <span class="notif-dot" id="clMsgBadge" style="display:none;"></span></button>
+        <button class="db-nav-item" id="clMsgNavBtn" onclick="showPanel('cl','clmessages',this);clearMsgBadge('cl')"><span class="db-nav-icon">💬</span> Messages <span class="notif-dot" id="clMsgBadge" style="display:none;"></span></button>
         <button class="db-nav-item" onclick="showPanel('cl','clvisitlog',this)"><span class="db-nav-icon">✅</span> Visit History</button>
         <button class="db-nav-item" onclick="showPanel('cl','clfeedback',this)"><span class="db-nav-icon">⭐</span> Leave Feedback</button>
         <div class="db-nav-divider"></div>
@@ -2739,6 +2740,8 @@
       setVal('clProfEmail',clientData.email);    setVal('clProfAddress',clientData.address);
       setVal('clProfEmergency',clientData.emergency_contact_name);
       loadClientMessages(name);
+      checkClientUnread();
+      setInterval(checkClientUnread, 10000);
     }
 
     async function loadClientMessages(clientName) {
@@ -2831,6 +2834,8 @@
       const evvSel=document.getElementById('evvClient');
       if(evvSel&&todayV.length>0) evvSel.innerHTML=todayV.map(v=>'<option value="'+(v.client_id||'')+'">'+(v.clients?.full_name||'Client')+'</option>').join('');
       loadCaregiverMessages(userId);
+      checkCaregiverUnread();
+      setInterval(checkCaregiverUnread, 10000);
     }
 
     async function saveCaregiverProfile() {
@@ -3583,7 +3588,7 @@
 
       if (role === 'manager') {
         loadDashboard(); loadClients(); loadCaregivers(); loadVisits();
-        loadAlerts(); loadBilling(); loadCompliance(); loadReports(); loadMessages(); startRealtime();
+        loadAlerts(); loadBilling(); loadCompliance(); loadReports(); loadMessages(); startRealtime(); checkManagerUnread(); setInterval(checkManagerUnread, 10000);
       } else if (role === 'caregiver') {
         loadCaregiverPortal(authData.user.id, profile); setTimeout(checkCaregiverUnread, 1500);
       } else if (role === 'client') {
