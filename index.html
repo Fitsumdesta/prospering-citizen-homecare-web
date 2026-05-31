@@ -1670,7 +1670,7 @@
     <div class="db-topbar">
       <span class="db-topbar-logo">Prospering <span>Citizen</span></span>
       <span class="db-topbar-role">Client Portal</span>
-      <div class="db-topbar-user"><button onclick="showPanel('cl','clsupport',null)" style="background:#f0f4f0;border:none;border-radius:8px;padding:0.35rem 0.9rem;cursor:pointer;font-size:0.8rem;color:#4e7152;font-weight:600;">🎧 Need Help?</button><div class="db-avatar">DR</div><span>Dorothy Reynolds</span><button class="db-logout" onclick="logout()">Log Out</button></div>
+      <div class="db-topbar-user"><button onclick="showPanel('cl','clsupport',null)" style="background:#f0f4f0;border:none;border-radius:8px;padding:0.35rem 0.9rem;cursor:pointer;font-size:0.8rem;color:#4e7152;font-weight:600;">🎧 Need Help?</button><div class="db-avatar" id="clAvatar">DR</div><span id="clName">Dorothy Reynolds</span><button class="db-logout" onclick="logout()">Log Out</button></div>
     </div>
     <div class="db-body">
       <div class="db-sidebar">
@@ -1691,18 +1691,18 @@
       </div>
       <div class="db-content">
         <div class="db-panel active" id="cl-cloverview">
-          <div class="db-page-title">Good morning, Dorothy 🌸</div>
-          <div class="db-page-sub">Here's a summary of your care today.</div>
+          <div class="db-page-title" id="clGreeting">Good morning! 🌸</div>
+          <div class="db-page-sub"><span id="clSubtitle">Loading your care summary...</span></div>
           <div class="db-stats">
-            <div class="db-stat-card"><div class="db-stat-icon">🧑‍⚕️</div><div class="db-stat-val">Maria S.</div><div class="db-stat-label">Your Caregiver</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">📅</div><div class="db-stat-val">8:00 AM</div><div class="db-stat-label">Next Visit Today</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">⏱️</div><div class="db-stat-val">3 hrs</div><div class="db-stat-label">Visit Duration</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">⭐</div><div class="db-stat-val">4.9</div><div class="db-stat-label">Caregiver Rating</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">🧑‍⚕️</div><div class="db-stat-val" id="clCaregiver">—</div><div class="db-stat-label">Your Caregiver</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">📅</div><div class="db-stat-val" id="clNextVisit">—</div><div class="db-stat-label">Next Visit Today</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">⏱️</div><div class="db-stat-val" id="clDuration">—</div><div class="db-stat-label">Visit Duration</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">⭐</div><div class="db-stat-val" id="clVisitsMonth">—</div><div class="db-stat-label">Visits This Month</div></div>
           </div>
           <div class="db-grid-2">
             <div class="db-card">
               <div class="db-card-header"><span class="db-card-title">Today's Schedule</span></div>
-              <div class="schedule-list">
+              <div class="schedule-list" id="clTodayList">
                 <div class="schedule-item"><span class="sched-time">8:00 AM</span><div class="sched-dot gold"></div><div class="sched-info"><div class="sched-title">Maria Santos arrives</div><div class="sched-sub">Personal Care — Bath, dressing, breakfast</div></div></div>
                 <div class="schedule-item"><span class="sched-time">11:00 AM</span><div class="sched-dot green"></div><div class="sched-info"><div class="sched-title">Morning activities</div><div class="sched-sub">Puzzles, music, tea time</div></div></div>
                 <div class="schedule-item"><span class="sched-time">4:00 PM</span><div class="sched-dot gray"></div><div class="sched-info"><div class="sched-title">Evening visit</div><div class="sched-sub">Medication reminder · 1 hr</div></div></div>
@@ -1730,11 +1730,8 @@
             <div class="db-card-header"><span class="db-card-title">Upcoming Visits</span></div>
             <table class="db-table">
               <thead><tr><th>Date</th><th>Time</th><th>Caregiver</th><th>Service</th><th>Duration</th></tr></thead>
-              <tbody>
-                <tr><td><strong>Today, Sat May 16</strong></td><td>8:00 AM</td><td>Maria Santos</td><td>Personal Care</td><td>3 hrs</td></tr>
-                <tr><td><strong>Today, Sat May 16</strong></td><td>4:00 PM</td><td>Maria Santos</td><td>Medication Reminder</td><td>1 hr</td></tr>
-                <tr><td>Sun, May 17</td><td>9:00 AM</td><td>Maria Santos</td><td>Personal Care</td><td>3 hrs</td></tr>
-                <tr><td>Mon, May 18</td><td>8:00 AM</td><td>Maria Santos</td><td>Personal Care</td><td>3 hrs</td></tr>
+              <tbody id="clScheduleBody">
+                <tr id="clSchedPlaceholder"><td colspan="5" style="text-align:center;color:#888;padding:1rem;">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -1791,12 +1788,20 @@
             </table>
           </div>
         </div>
-        <div class="db-panel" id="cl-clmessages">
+                <div class="db-panel" id="cl-clmessages">
           <div class="db-page-title">Messages</div><div class="db-page-sub">Communicate with your care team and the Prospering Citizen office.</div>
+          <div class="db-card" style="margin-bottom:1.25rem;">
+            <div class="db-card-header"><span class="db-card-title">Send Message to Office</span></div>
+            <div class="db-form" style="padding-top:0.5rem;">
+              <div class="db-form-group"><label>Subject</label><input type="text" id="clMsgSubject" placeholder="e.g. Schedule question" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+              <div class="db-form-group"><label>Message</label><textarea id="clMsgBody" rows="4" placeholder="Type your message here..." style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;resize:vertical;font-family:inherit;"></textarea></div>
+              <div id="clMsgStatus" style="display:none;padding:0.6rem 0.9rem;border-radius:8px;font-size:0.85rem;margin-bottom:0.75rem;"></div>
+              <button id="clMsgBtn" onclick="sendClientMessage()" style="padding:0.85rem 2rem;border:none;border-radius:10px;background:#0D2B1F;color:#C9A84C;font-weight:700;cursor:pointer;font-size:1rem;">Send Message</button>
+            </div>
+          </div>
           <div class="db-card">
-            <div class="db-card-header"><span class="db-card-title">Inbox</span><button class="db-btn db-btn-primary" style="font-size:0.78rem;padding:0.4rem 0.9rem;">+ New Message</button></div>
-            <div class="msg-list-item"><div class="msg-list-avatar">🌿</div><div><div class="msg-list-name">Prospering Citizen Office</div><div class="msg-list-preview">Good morning Dorothy! Your care plan review is coming up on May 19...</div></div><div class="msg-list-time">9:00 AM</div><div class="msg-unread"></div></div>
-            <div class="msg-list-item"><div class="msg-list-avatar">👩‍⚕️</div><div><div class="msg-list-name">Maria Santos (Your Caregiver)</div><div class="msg-list-preview">Good morning! I'll be arriving at 8:00 AM as scheduled. See you soon 🌸</div></div><div class="msg-list-time">7:45 AM</div><div class="msg-unread"></div></div>
+            <div class="db-card-header"><span class="db-card-title">Inbox</span><button class="db-btn db-btn-outline" style="font-size:0.78rem;padding:0.4rem 0.9rem;" onclick="loadClientMessages(document.getElementById('clName')?.textContent||'')">&#8635; Refresh</button></div>
+            <div id="clMsgList"><div style="padding:1rem;color:#888;font-size:0.85rem;">Loading messages...</div></div>
           </div>
         </div>
         <div class="db-panel" id="cl-clvisitlog">
@@ -1806,9 +1811,7 @@
             <table class="db-table">
               <thead><tr><th>Date</th><th>Caregiver</th><th>Service</th><th>Hours</th><th>Notes</th></tr></thead>
               <tbody>
-                <tr><td>May 15</td><td>Maria Santos</td><td>Personal Care</td><td>3 hrs</td><td>Good morning. Bath completed. Client in good spirits.</td></tr>
-                <tr><td>May 14</td><td>Maria Santos</td><td>Personal Care</td><td>3 hrs</td><td>Mild confusion in AM, fully oriented by 9 AM.</td></tr>
-                <tr><td>May 13</td><td>Maria Santos</td><td>Personal Care + Meals</td><td>4 hrs</td><td>Excellent day. Enjoyed garden walk and tea.</td></tr>
+                <tr id="clHistPlaceholder"><td colspan="5" style="text-align:center;color:#888;padding:1rem;">Loading visit history...</td></tr>
               </tbody>
             </table>
           </div>
@@ -1841,19 +1844,19 @@
             <div class="db-card-header"><span class="db-card-title">Personal Information</span></div>
             <div class="db-form">
               <div class="db-form-row">
-                <div class="db-form-group"><label>Full Name</label><input type="text" value="Dorothy Reynolds" /></div>
-                <div class="db-form-group"><label>Date of Birth</label><input type="date" value="1947-03-14" /></div>
+                <div class="db-form-group"><label>Full Name</label><input type="text" id="clProfName" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"/></div>
+                <div class="db-form-group"><label>Date of Birth</label><input type="date" id="clProfDOB" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"/></div>
               </div>
               <div class="db-form-row">
-                <div class="db-form-group"><label>Phone</label><input type="tel" value="(555) 210-4400" /></div>
-                <div class="db-form-group"><label>Email</label><input type="email" value="d.reynolds@email.com" /></div>
+                <div class="db-form-group"><label>Phone</label><input type="tel" id="clProfPhone" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"/></div>
+                <div class="db-form-group"><label>Email</label><input type="email" id="clProfEmail" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"/></div>
               </div>
-              <div class="db-form-group"><label>Address</label><input type="text" value="214 Maple Drive, Fairfax, VA 22030" /></div>
+              <div class="db-form-group"><label>Address</label><input type="text" id="clProfAddress" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"/></div>
               <div class="db-form-row">
-                <div class="db-form-group"><label>Emergency Contact</label><input type="text" value="Sandra Mitchell (daughter)" /></div>
-                <div class="db-form-group"><label>Emergency Phone</label><input type="tel" value="(555) 394-8821" /></div>
+                <div class="db-form-group"><label>Emergency Contact Name</label><input type="text" id="clProfEmergency" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"/></div>
+                <div class="db-form-group"><label>Emergency Phone</label><input type="tel" id="clProfEmergencyPhone" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"/></div>
               </div>
-              <div class="db-form-group"><label>Known Allergies</label><input type="text" value="Penicillin" /></div>
+              <div class="db-form-group"><label>Known Allergies</label><input type="text" id="clProfAllergies" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"/></div>
               <button class="db-btn db-btn-primary">Save Changes</button>
             </div>
           </div>
@@ -2663,6 +2666,98 @@
     }
 
 
+
+    // Client Portal Loader
+    let clClientId = null;
+
+    async function loadClientPortal(clientData) {
+      clClientId = clientData.id;
+      const name = clientData.full_name || 'Client';
+      const initials = name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+      const hour = new Date().getHours();
+      const greet = (hour<12?'Good morning':hour<17?'Good afternoon':'Good evening') + ', ' + name.split(' ')[0] + '! 🌸';
+      const av=document.getElementById('clAvatar'); if(av) av.textContent=initials;
+      const nm=document.getElementById('clName');   if(nm) nm.textContent=name;
+      const gr=document.getElementById('clGreeting'); if(gr) gr.textContent=greet;
+      const today=new Date().toISOString().slice(0,10);
+      const monthStart=today.slice(0,7)+'-01';
+      const [todayR,monthR,upcomingR]=await Promise.all([
+        db.from('visits').select('*,profiles(full_name)').eq('client_id',clClientId).eq('visit_date',today).order('start_time'),
+        db.from('visits').select('id').eq('client_id',clClientId).gte('visit_date',monthStart).lte('visit_date',today),
+        db.from('visits').select('*,profiles(full_name)').eq('client_id',clClientId).gte('visit_date',today).order('visit_date').order('start_time').limit(10),
+      ]);
+      const todayV=todayR.data||[],monthV=monthR.data||[],upcomingV=upcomingR.data||[];
+      const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+      const nextVisit=todayV[0];
+      const cg=(nextVisit?.profiles?.full_name)||(upcomingV[0]?.profiles?.full_name)||'Assigned by office';
+      const cgShort=cg.split(' ')[0]+' '+(cg.split(' ')[1]||'').charAt(0)+'.';
+      set('clCaregiver',cgShort);
+      set('clNextVisit',nextVisit?fmtTime(nextVisit.start_time):upcomingV[0]?upcomingV[0].visit_date:'TBD');
+      const dur=parseFloat(nextVisit?.duration_hours||upcomingV[0]?.duration_hours||0);
+      const dh=Math.floor(dur),dm=Math.round((dur-dh)*60);
+      set('clDuration',dur>0?(dh>0?dh+'h ':'')+( dm>0?dm+'m':''):'—');
+      set('clVisitsMonth',monthV.length);
+      const sub=document.getElementById('clSubtitle');
+      if(sub) sub.textContent=todayV.length>0?'You have '+todayV.length+' visit(s) today.':'No visits today.';
+      const todayList=document.getElementById('clTodayList');
+      if(todayList) todayList.innerHTML=todayV.length===0
+        ? '<div style="padding:1rem;text-align:center;color:#888;">No visits today.</div>'
+        : todayV.map(v=>{const dot=v.status==='completed'?'green':v.status==='cancelled'?'red':'gold';return '<div class="schedule-item"><span class="sched-time">'+fmtTime(v.start_time)+'</span><div class="sched-dot '+dot+'"></div><div class="sched-info"><div class="sched-title">'+(v.profiles?.full_name||'Caregiver')+' arrives</div><div class="sched-sub">'+(v.service_type||'Visit')+' &middot; '+(v.duration_hours||'?')+'hr</div></div></div>';}).join('');
+      const schedBody=document.getElementById('clScheduleBody');
+      if(schedBody) schedBody.innerHTML=upcomingV.length===0
+        ? '<tr><td colspan="5" style="text-align:center;color:#888;padding:1rem;">No upcoming visits.</td></tr>'
+        : upcomingV.map(v=>{const isT=v.visit_date===today;const tm=Math.round((parseFloat(v.duration_hours)||0)*60);const h=Math.floor(tm/60),m=tm%60;const dur2=h>0&&m>0?h+'h '+m+'m':h>0?h+'h':m+'m';return '<tr'+(isT?' style="background:#f0f8f4;"':'')+'>'+'<td>'+(isT?'<strong>Today</strong>':v.visit_date)+'</td><td>'+fmtTime(v.start_time)+'</td><td>'+(v.profiles?.full_name||'TBD')+'</td><td>'+(v.service_type||'—')+'</td><td>'+dur2+'</td></tr>';}).join('');
+      const setVal=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v||'';};
+      setVal('clProfName',clientData.full_name); setVal('clProfPhone',clientData.phone);
+      setVal('clProfEmail',clientData.email);    setVal('clProfAddress',clientData.address);
+      setVal('clProfEmergency',clientData.emergency_contact_name);
+      loadClientMessages(name);
+    }
+
+    async function loadClientMessages(clientName) {
+      const{data:msgs}=await db.from('manager_messages').select('*').or('sender_name.eq.'+clientName+',recipient_name.eq.'+clientName).order('created_at',{ascending:false}).limit(20);
+      const inbox=document.getElementById('clMsgList');
+      if(!inbox) return;
+      inbox.innerHTML=!msgs||msgs.length===0
+        ? '<div style="padding:1rem;color:#888;">No messages yet. Send one above!</div>'
+        : msgs.map(m=>{const isMe=!m.from_manager;const bg=isMe?'#f0f4f0':'#fff';const label=isMe?'You':'Manager';const t=new Date(m.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'});return '<div style="padding:0.85rem 1rem;border-bottom:1px solid #f0f0f0;background:'+bg+'"><div style="display:flex;justify-content:space-between;margin-bottom:0.25rem;"><strong style="font-size:0.85rem;">'+label+': '+(m.subject||'Message')+'</strong><span style="font-size:0.72rem;color:#aaa;">'+t+'</span></div><div style="font-size:0.85rem;color:#555;">'+m.body+'</div></div>';}).join('');
+    }
+
+    async function sendClientMessage() {
+      const subject=document.getElementById('clMsgSubject')?.value.trim();
+      const body=document.getElementById('clMsgBody')?.value.trim();
+      const status=document.getElementById('clMsgStatus');
+      const btn=document.getElementById('clMsgBtn');
+      if(!body){if(status){status.textContent='Please enter a message.';status.style.background='#f8d7da';status.style.color='#721c24';status.style.display='block';}return;}
+      if(btn){btn.disabled=true;btn.textContent='Sending...';}
+      const clName=document.getElementById('clName')?.textContent||'Client';
+      const{error}=await db.from('manager_messages').insert({recipient_name:clName,sender_name:clName,recipient_type:'client',from_manager:false,subject:subject||('Message from '+clName),body,read:false});
+      if(btn){btn.disabled=false;btn.textContent='Send Message';}
+      if(error){if(status){status.textContent='Error: '+error.message;status.style.background='#f8d7da';status.style.color='#721c24';status.style.display='block';}return;}
+      if(status){status.textContent='Message sent!';status.style.background='#d4edda';status.style.color='#155724';status.style.display='block';}
+      const subEl=document.getElementById('clMsgSubject');if(subEl)subEl.value='';
+      const bodyEl=document.getElementById('clMsgBody');if(bodyEl)bodyEl.value='';
+      setTimeout(()=>{if(status)status.style.display='none';},3000);
+      loadClientMessages(clName);
+    }
+
+    async function saveClientProfile() {
+      if(!clClientId) return;
+      const name=document.getElementById('clProfName')?.value.trim();
+      const phone=document.getElementById('clProfPhone')?.value.trim();
+      const email=document.getElementById('clProfEmail')?.value.trim();
+      const address=document.getElementById('clProfAddress')?.value.trim();
+      const emergency=document.getElementById('clProfEmergency')?.value.trim();
+      const msg=document.getElementById('clProfMsg');
+      if(!name){if(msg){msg.style.background='#f8d7da';msg.style.color='#721c24';msg.textContent='Name is required.';msg.style.display='block';}return;}
+      const{error}=await db.from('clients').update({full_name:name,phone:phone||null,email:email||null,address:address||null,emergency_contact_name:emergency||null}).eq('id',clClientId);
+      if(error){if(msg){msg.style.background='#f8d7da';msg.style.color='#721c24';msg.textContent='Error: '+error.message;msg.style.display='block';}return;}
+      if(msg){msg.style.background='#d4edda';msg.style.color='#155724';msg.textContent='Profile saved!';msg.style.display='block';}
+      const av=document.getElementById('clAvatar');if(av)av.textContent=name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+      const nm=document.getElementById('clName');if(nm)nm.textContent=name;
+      setTimeout(()=>{if(msg)msg.style.display='none';},3000);
+    }
+
     // Caregiver Portal Loader
     let cgUserId = null;
     async function loadCaregiverPortal(userId, profile) {
@@ -3433,8 +3528,18 @@
 
       // Fetch role from profiles
       const { data: profile } = await db.from('profiles').select('role, full_name').eq('id', authData.user.id).single();
-      const role = profile?.role || 'caregiver';
-      const name = profile?.full_name || email;
+      let role = profile?.role || null;
+      let name = profile?.full_name || email;
+
+      // If no profile role, check clients table by email (client login)
+      let clientRecord = null;
+      if (!role) {
+        const { data: cl } = await db.from('clients').select('*').eq('email', authData.user.email).single();
+        if (cl) { role = 'client'; name = cl.full_name || email; clientRecord = cl;
+          // Link user_id if not already set
+          if (!cl.user_id) await db.from('clients').update({ user_id: authData.user.id }).eq('id', cl.id);
+        } else { role = 'caregiver'; }
+      }
 
       // Update topbar name display
       const avatarInitials = name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
@@ -3454,6 +3559,8 @@
         loadAlerts(); loadBilling(); loadCompliance(); loadReports(); loadMessages(); startRealtime();
       } else if (role === 'caregiver') {
         loadCaregiverPortal(authData.user.id, profile);
+      } else if (role === 'client') {
+        loadClientPortal(clientRecord || { id: authData.user.id, full_name: name, email: authData.user.email });
       }
     }
 
