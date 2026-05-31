@@ -409,7 +409,7 @@
     .profile-name { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 600; color: var(--charcoal); }
     .profile-role { font-size: 0.78rem; color: var(--mid); margin-top: 0.15rem; }
     .profile-edit { margin-left: auto; }
-    .notif-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #e74c3c; margin-left: 0.4rem; vertical-align: middle; }
+    .notif-dot { display: inline-block; min-width: 18px; height: 18px; border-radius: 9px; background: #e74c3c; margin-left: 0.4rem; vertical-align: middle; font-size: 0.65rem; font-weight: 700; color: white; text-align: center; line-height: 18px; padding: 0 3px; }
     .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
     /* ── PHASE 4: MOBILE CAREGIVER / CLIENT ── */
@@ -944,7 +944,7 @@
         <button class="db-nav-item" onclick="showPanel('m','billing',this)"><span class="db-nav-icon">💳</span> Billing</button>
         <button class="db-nav-item" onclick="showPanel('m','compliance',this)"><span class="db-nav-icon">📋</span> Compliance</button>
         <button class="db-nav-item" onclick="showPanel('m','reports',this)"><span class="db-nav-icon">📈</span> Reports</button>
-        <button class="db-nav-item" onclick="showPanel('m','messages',this)"><span class="db-nav-icon">💬</span> Messages</button>
+        <button class="db-nav-item" onclick="showPanel('m','messages',this);clearMsgBadge('m')"><span class="db-nav-icon">💬</span> Messages <span class="notif-dot" id="mMsgBadge" style="display:none;"></span></button>
         <div class="db-nav-divider"></div>
         <button class="db-nav-item" onclick="showPanel('m','settings',this)"><span class="db-nav-icon">⚙️</span> Settings</button>
         <button class="db-nav-item" onclick="showPanel('m','support',this)"><span class="db-nav-icon">🎧</span> Support</button>
@@ -1374,7 +1374,7 @@
         <button class="db-nav-item" onclick="showPanel('c','cincident',this)"><span class="db-nav-icon">⚠️</span> Report Incident</button>
         <div class="db-nav-divider"></div>
         <div class="db-nav-section">Me</div>
-        <button class="db-nav-item" onclick="showPanel('c','cmessages',this)"><span class="db-nav-icon">💬</span> Messages</button>
+        <button class="db-nav-item" onclick="showPanel('c','cmessages',this);clearMsgBadge('c')"><span class="db-nav-icon">💬</span> Messages <span class="notif-dot" id="cMsgBadge" style="display:none;"></span></button>
         <button class="db-nav-item" onclick="showPanel('c','cpay',this)"><span class="db-nav-icon">💵</span> Pay &amp; Hours</button>
         <button class="db-nav-item" onclick="showPanel('c','ctraining',this)"><span class="db-nav-icon">📚</span> Training</button>
         <button class="db-nav-item" onclick="showPanel('c','cprofile',this)"><span class="db-nav-icon">👤</span> My Profile</button>
@@ -1664,7 +1664,7 @@
       <button class="active" onclick="showPanel('cl','cloverview',null);setClientTab(this)"><span class="tab-icon">🏠</span>Home</button>
       <button onclick="showPanel('cl','clschedule',null);setClientTab(this)"><span class="tab-icon">📅</span>Schedule</button>
       <button onclick="showPanel('cl','clcareplan',null);setClientTab(this)"><span class="tab-icon">📋</span>Care Plan</button>
-      <button onclick="showPanel('cl','clmessages',null);setClientTab(this)"><span class="tab-icon">💬</span>Messages</button>
+      <button onclick="showPanel('cl','clmessages',null);setClientTab(this);clearMsgBadge('cl')"><span class="tab-icon">💬</span>Messages<span id="clMsgTabBadge" style="display:none;position:absolute;top:6px;right:calc(50% - 30px);background:#e74c3c;color:white;border-radius:8px;font-size:0.6rem;padding:1px 4px;font-weight:700;"></span></button>
       <button onclick="showPanel('cl','clprofile',null);setClientTab(this)"><span class="tab-icon">👤</span>More</button>
     </div>
     <div class="db-topbar">
@@ -1682,7 +1682,7 @@
         <div class="db-nav-divider"></div>
         <div class="db-nav-section">Account</div>
         <button class="db-nav-item" onclick="showPanel('cl','clbilling',this)"><span class="db-nav-icon">💳</span> Billing</button>
-        <button class="db-nav-item" onclick="showPanel('cl','clmessages',this)"><span class="db-nav-icon">💬</span> Messages <span class="notif-dot"></span></button>
+        <button class="db-nav-item" onclick="showPanel('cl','clmessages',this);clearMsgBadge('cl')"><span class="db-nav-icon">💬</span> Messages <span class="notif-dot" id="clMsgBadge" style="display:none;"></span></button>
         <button class="db-nav-item" onclick="showPanel('cl','clvisitlog',this)"><span class="db-nav-icon">✅</span> Visit History</button>
         <button class="db-nav-item" onclick="showPanel('cl','clfeedback',this)"><span class="db-nav-icon">⭐</span> Leave Feedback</button>
         <div class="db-nav-divider"></div>
@@ -2397,7 +2397,7 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => { loadDashboard(); loadClients(); })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => { loadDashboard(); loadCaregivers(); })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'incidents' }, () => { loadDashboard(); loadAlerts(); loadReports(); })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'manager_messages' }, () => loadMessages())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'manager_messages' }, () => { loadMessages(); checkManagerUnread(); })
         .subscribe();
     }
 
@@ -2666,6 +2666,33 @@
     }
 
 
+
+
+    // Message Notification Badges
+    function showMsgBadge(prefix, count) {
+      const b=document.getElementById(prefix+'MsgBadge');
+      const t=document.getElementById(prefix+'MsgTabBadge');
+      if(b){b.textContent=count>9?'9+':count;b.style.display=count>0?'inline-block':'none';}
+      if(t){t.textContent=count>9?'9+':count;t.style.display=count>0?'inline-block':'none';}
+    }
+    function clearMsgBadge(prefix){ showMsgBadge(prefix,0); }
+
+    async function checkManagerUnread() {
+      const{count}=await db.from('manager_messages').select('id',{count:'exact',head:true}).eq('read',false).eq('from_manager',false);
+      showMsgBadge('m',count||0);
+    }
+    async function checkCaregiverUnread() {
+      const nm=document.getElementById('cgName')?.textContent||'';
+      if(!nm) return;
+      const{count}=await db.from('manager_messages').select('id',{count:'exact',head:true}).eq('read',false).eq('from_manager',true).eq('recipient_name',nm);
+      showMsgBadge('c',count||0);
+    }
+    async function checkClientUnread() {
+      const nm=document.getElementById('clName')?.textContent||'';
+      if(!nm) return;
+      const{count}=await db.from('manager_messages').select('id',{count:'exact',head:true}).eq('read',false).eq('from_manager',true).eq('recipient_name',nm);
+      showMsgBadge('cl',count||0);
+    }
 
     // Client Portal Loader
     let clClientId = null;
@@ -3558,7 +3585,7 @@
         loadDashboard(); loadClients(); loadCaregivers(); loadVisits();
         loadAlerts(); loadBilling(); loadCompliance(); loadReports(); loadMessages(); startRealtime();
       } else if (role === 'caregiver') {
-        loadCaregiverPortal(authData.user.id, profile);
+        loadCaregiverPortal(authData.user.id, profile); setTimeout(checkCaregiverUnread, 1500);
       } else if (role === 'client') {
         loadClientPortal(clientRecord || { id: authData.user.id, full_name: name, email: authData.user.email });
       }
