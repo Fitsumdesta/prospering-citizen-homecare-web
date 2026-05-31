@@ -1359,7 +1359,7 @@
     <div class="db-topbar">
       <span class="db-topbar-logo">Prospering <span>Citizen</span></span>
       <span class="db-topbar-role">Caregiver</span>
-      <div class="db-topbar-user"><button onclick="showPanel('c','csupport',null)" style="background:#f0f4f0;border:none;border-radius:8px;padding:0.35rem 0.9rem;cursor:pointer;font-size:0.8rem;color:#4e7152;font-weight:600;">🎧 Need Help?</button><div class="db-avatar">MS</div><span>Maria Santos</span><button class="db-logout" onclick="logout()">Log Out</button></div>
+      <div class="db-topbar-user"><button onclick="showPanel('c','csupport',null)" style="background:#f0f4f0;border:none;border-radius:8px;padding:0.35rem 0.9rem;cursor:pointer;font-size:0.8rem;color:#4e7152;font-weight:600;">🎧 Need Help?</button><div class="db-avatar" id="cgAvatar">MS</div><span id="cgName">Maria Santos</span><button class="db-logout" onclick="logout()">Log Out</button></div>
     </div>
     <div class="db-body">
       <div class="db-sidebar">
@@ -1382,18 +1382,18 @@
       </div>
       <div class="db-content">
         <div class="db-panel active" id="c-coverview">
-          <div class="db-page-title">Good morning, Maria! 🌿</div>
-          <div class="db-page-sub">You have 3 visits scheduled today. Have a wonderful shift!</div>
+          <div class="db-page-title" id="cgGreeting">Good morning! 🌿</div>
+          <div class="db-page-sub"><span id="cgSubtitle">Loading your schedule...</span></div>
           <div class="db-stats">
-            <div class="db-stat-card"><div class="db-stat-icon">📅</div><div class="db-stat-val">3</div><div class="db-stat-label">Visits Today</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">⏱️</div><div class="db-stat-val">9 hrs</div><div class="db-stat-label">Hours Today</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">📅</div><div class="db-stat-val" id="cgVisitsToday">—</div><div class="db-stat-label">Visits Today</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">⏱️</div><div class="db-stat-val" id="cgHoursToday">—</div><div class="db-stat-label">Hours Today</div></div>
             <div class="db-stat-card"><div class="db-stat-icon">👥</div><div class="db-stat-val">3</div><div class="db-stat-label">Active Clients</div></div>
-            <div class="db-stat-card"><div class="db-stat-icon">⭐</div><div class="db-stat-val">4.9</div><div class="db-stat-label">My Rating</div></div>
+            <div class="db-stat-card"><div class="db-stat-icon">⭐</div><div class="db-stat-val" id="cgVisitsMonth">—</div><div class="db-stat-label">Visits This Month</div></div>
           </div>
           <div class="db-grid-2">
             <div class="db-card">
               <div class="db-card-header"><span class="db-card-title">Today's Visits</span></div>
-              <div class="schedule-list">
+              <div class="schedule-list" id="cgTodayList">
                 <div class="schedule-item"><span class="sched-time">8:00 AM</span><div class="sched-dot green"></div><div class="sched-info"><div class="sched-title">Dorothy Reynolds</div><div class="sched-sub">Personal Care · 3hrs · 214 Maple Dr, Fairfax</div></div></div>
                 <div class="schedule-item"><span class="sched-time">12:30 PM</span><div class="sched-dot gold"></div><div class="sched-info"><div class="sched-title">Helen Carter</div><div class="sched-sub">Companion &amp; Meals · 3hrs · 88 Oak St, Fairfax</div></div></div>
                 <div class="schedule-item"><span class="sched-time">4:00 PM</span><div class="sched-dot gold"></div><div class="sched-info"><div class="sched-title">Dorothy Reynolds (Evening)</div><div class="sched-sub">Medication Reminder · 1hr</div></div></div>
@@ -1421,7 +1421,7 @@
         <div class="db-panel" id="c-cschedule">
           <div class="db-page-title">My Schedule</div><div class="db-page-sub">Your upcoming visits for the week.</div>
           <div class="db-card">
-            <div class="db-card-header"><span class="db-card-title">Week of May 16–22, 2025</span></div>
+            <div class="db-card-header"><span class="db-card-title">Your Upcoming Visits</span></div>
             <table class="db-table">
               <thead><tr><th>Day</th><th>Time</th><th>Client</th><th>Service</th><th>Hours</th><th>Status</th></tr></thead>
               <tbody>
@@ -1548,8 +1548,7 @@
           <div class="db-page-title">Messages</div><div class="db-page-sub">Communicate with your supervisor and the office team.</div>
           <div class="db-card">
             <div class="db-card-header"><span class="db-card-title">Inbox</span><button class="db-btn db-btn-primary" style="font-size:0.78rem;padding:0.4rem 0.9rem;">+ New Message</button></div>
-            <div class="msg-list-item"><div class="msg-list-avatar">🏢</div><div><div class="msg-list-name">Admin Office</div><div class="msg-list-preview">Hi Maria! Just checking in — do you need anything for this week's visits?</div></div><div class="msg-list-time">8:00 AM</div><div class="msg-unread"></div></div>
-            <div class="msg-list-item"><div class="msg-list-avatar">👩</div><div><div class="msg-list-name">Sandra M. (Dorothy's daughter)</div><div class="msg-list-preview">Thank you so much for caring for my mom...</div></div><div class="msg-list-time">Yesterday</div></div>
+            <div id="cgMsgList"><div style="padding:1rem;color:#888;font-size:0.85rem;">Loading messages...</div></div>
           </div>
         </div>
         <div class="db-panel" id="c-cpay">
@@ -2654,6 +2653,50 @@
       renderCalendar();
     }
 
+
+    // Caregiver Portal Loader
+    let cgUserId = null;
+    async function loadCaregiverPortal(userId, profile) {
+      cgUserId = userId;
+      const name = profile?.full_name || 'Caregiver';
+      const initials = name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+      const hour = new Date().getHours();
+      const greet = (hour<12?'Good morning':hour<17?'Good afternoon':'Good evening') + ', ' + name.split(' ')[0] + '! 🌿';
+      const av=document.getElementById('cgAvatar'); if(av) av.textContent=initials;
+      const nm=document.getElementById('cgName');   if(nm) nm.textContent=name;
+      const gr=document.getElementById('cgGreeting'); if(gr) gr.textContent=greet;
+      const today=new Date().toISOString().slice(0,10);
+      const monthStart=today.slice(0,7)+'-01';
+      const weekEnd=new Date(new Date().setDate(new Date().getDate()+7)).toISOString().slice(0,10);
+      const [todayR,monthR,weekR]=await Promise.all([
+        db.from('visits').select('*,clients(full_name,address)').eq('caregiver_id',userId).eq('visit_date',today).order('start_time'),
+        db.from('visits').select('id,duration_hours').eq('caregiver_id',userId).gte('visit_date',monthStart).lte('visit_date',today),
+        db.from('visits').select('*,clients(full_name)').eq('caregiver_id',userId).gte('visit_date',today).lte('visit_date',weekEnd).order('visit_date').order('start_time'),
+      ]);
+      const todayV=todayR.data||[],monthV=monthR.data||[],weekV=weekR.data||[];
+      const todayHrs=todayV.reduce((s,v)=>s+parseFloat(v.duration_hours||0),0);
+      const monthHrs=monthV.reduce((s,v)=>s+parseFloat(v.duration_hours||0),0);
+      const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+      set('cgVisitsToday',todayV.length||'0');set('cgHoursToday',todayHrs.toFixed(1)+' hrs');
+      set('cgVisitsMonth',monthV.length||'0');set('cgHoursMonth',monthHrs.toFixed(1)+' hrs');
+      const sub=document.getElementById('cgSubtitle');
+      if(sub) sub.textContent=todayV.length>0?'You have '+todayV.length+' visit(s) today. Have a great shift!':'No visits scheduled for today.';
+      const todayList=document.getElementById('cgTodayList');
+      if(todayList) todayList.innerHTML=todayV.length===0
+        ? '<div style="padding:1rem;text-align:center;color:#888;">No visits today.</div>'
+        : todayV.map(v=>{const dot=v.status==='completed'?'green':v.status==='cancelled'?'red':'gold';return '<div class="schedule-item"><span class="sched-time">'+fmtTime(v.start_time)+'</span><div class="sched-dot '+dot+'"></div><div class="sched-info"><div class="sched-title">'+(v.clients?.full_name||'Client')+'</div><div class="sched-sub">'+(v.service_type||'Visit')+' &middot; '+(v.duration_hours||'?')+'hr</div></div></div>';}).join('');
+      const schedBody=document.getElementById('cgScheduleBody');
+      if(schedBody) schedBody.innerHTML=weekV.length===0
+        ? '<tr><td colspan="6" style="text-align:center;color:#888;padding:1rem;">No upcoming visits.</td></tr>'
+        : weekV.map(v=>{const isT=v.visit_date===today;const dot=v.status==='completed'?'green':v.status==='cancelled'?'red':'gold';const tm=Math.round((parseFloat(v.duration_hours)||0)*60);const h=Math.floor(tm/60),m=tm%60;const dur=h>0&&m>0?h+'h '+m+'m':h>0?h+'h':m+'m';return '<tr'+(isT?' style="background:#f0f8f4;"':'')+'>'+'<td>'+(isT?'<strong>Today</strong>':v.visit_date)+'</td><td>'+fmtTime(v.start_time)+'</td><td>'+(v.clients?.full_name||'—')+'</td><td>'+(v.service_type||'—')+'</td><td>'+dur+'</td><td><span class="badge badge-'+dot+'">'+(v.status||'scheduled')+'</span></td></tr>';}).join('');
+      const evvSel=document.getElementById('evvClient');
+      if(evvSel&&todayV.length>0) evvSel.innerHTML=todayV.map(v=>'<option value="'+(v.client_id||'')+'">'+(v.clients?.full_name||'Client')+'</option>').join('');
+      const {data:msgs}=await db.from('manager_messages').select('*').eq('recipient_name',name).order('created_at',{ascending:false}).limit(20);
+      const cgMsgList=document.getElementById('cgMsgList');
+      if(cgMsgList) cgMsgList.innerHTML=!msgs||msgs.length===0
+        ? '<div style="padding:1rem;color:#888;">No messages yet.</div>'
+        : msgs.map(m=>'<div style="padding:0.85rem 1rem;border-bottom:1px solid #f0f0f0;"><div style="display:flex;justify-content:space-between;"><strong style="font-size:0.88rem;">'+(m.subject||'Message')+'</strong><span style="font-size:0.75rem;color:#aaa;">'+new Date(m.created_at).toLocaleDateString()+'</span></div><div style="font-size:0.85rem;color:#555;margin-top:0.25rem;">'+m.body+'</div></div>').join('');
+    }
     // ── Edit Visit ──
     let editingVisitId = null;
 
@@ -3303,6 +3346,8 @@
       if (role === 'manager') {
         loadDashboard(); loadClients(); loadCaregivers(); loadVisits();
         loadAlerts(); loadBilling(); loadCompliance(); loadReports(); loadMessages(); startRealtime();
+      } else if (role === 'caregiver') {
+        loadCaregiverPortal(authData.user.id, profile);
       }
     }
 
