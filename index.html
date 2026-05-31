@@ -1007,7 +1007,7 @@
             </div>
             <div class="db-form-group"><label>Full Name *</label><input type="text" id="newClientName" placeholder="e.g. Harold Thompson" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-              <div class="db-form-group"><label>Age</label><input type="number" id="newClientAge" placeholder="e.g. 78" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+              <div class="db-form-group"><label>Date of Birth</label><input type="date" id="newClientDOB" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
               <div class="db-form-group"><label>Phone</label><input type="tel" id="newClientPhone" placeholder="703-555-0100" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
             </div>
             <div class="db-form-group"><label>Address</label><input type="text" id="newClientAddress" placeholder="123 Oak St, Arlington VA 22201" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
@@ -1919,7 +1919,10 @@
         <button onclick="closeEditClientModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">✕</button>
       </div>
       <div class="db-form-group"><label>Full Name *</label><input type="text" id="editClientName" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
-      <div class="db-form-group"><label>Phone</label><input type="tel" id="editClientPhone" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="db-form-group"><label>Date of Birth</label><input type="date" id="editClientDOB" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+        <div class="db-form-group"><label>Phone</label><input type="tel" id="editClientPhone" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+      </div>
       <div class="db-form-group"><label>Address</label><input type="text" id="editClientAddress" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
       <div class="db-form-group"><label>Services / Notes</label><input type="text" id="editClientNotes" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
       <div class="db-form-group"><label>Emergency Contact</label><input type="text" id="editClientEmergency" placeholder="Name — Relationship — Phone" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
@@ -2135,7 +2138,7 @@
         tbody.innerHTML = '';
         data.forEach(c => {
           const row = document.createElement('tr');
-          const age = c.date_of_birth ? new Date().getFullYear() - new Date(c.date_of_birth).getFullYear() : '—';
+          const age = c.date_of_birth ? (new Date().getFullYear() - new Date(c.date_of_birth).getFullYear()) + ' yrs' : '—';
           row.innerHTML = '<td><strong>' + c.full_name + '</strong></td><td>' + age + '</td><td>' + (c.care_notes || '—') + '</td><td>' + (c.phone || '—') + '</td><td><span class="badge badge-green">Active</span></td><td><button onclick="openEditClient(' + JSON.stringify(c).replace(/"/g,"&quot;") + ')" style="padding:0.25rem 0.65rem;background:#f0f4f0;border:1px solid #c9e6d4;border-radius:6px;cursor:pointer;font-size:0.78rem;color:#2d6a4f;">✏️ Edit</button></td>';
           tbody.appendChild(row);
         });
@@ -2608,6 +2611,7 @@
     function openEditClient(c) {
       editingClientId = c.id;
       document.getElementById('editClientName').value = c.full_name || '';
+      document.getElementById('editClientDOB').value = c.date_of_birth || '';
       document.getElementById('editClientPhone').value = c.phone || '';
       document.getElementById('editClientAddress').value = c.address || '';
       document.getElementById('editClientNotes').value = c.care_notes || '';
@@ -2623,11 +2627,12 @@
       if (!name) { alert('Name is required'); return; }
       const { error } = await db.from('clients').update({
         full_name: name,
+        date_of_birth: document.getElementById('editClientDOB').value || null,
         phone: document.getElementById('editClientPhone').value.trim() || null,
         address: document.getElementById('editClientAddress').value.trim() || null,
         care_notes: document.getElementById('editClientNotes').value.trim() || null,
         emergency_contact_name: document.getElementById('editClientEmergency').value.trim() || null,
-        lat: null, lng: null, // reset geocache when address changes
+        lat: null, lng: null,
       }).eq('id', editingClientId);
       if (error) { alert('Error saving: ' + error.message); return; }
       closeEditClientModal();
@@ -3085,16 +3090,17 @@
     }
     function closeAddClientModal() {
       document.getElementById('addClientModal').style.display = 'none';
-      ['newClientName','newClientAge','newClientPhone','newClientAddress','newClientEmergency'].forEach(id => document.getElementById(id).value = '');
+      ['newClientName','newClientDOB','newClientPhone','newClientAddress','newClientEmergency'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
     }
     async function submitAddClient() {
       const name = document.getElementById('newClientName').value.trim();
       if (!name) { alert('Please enter the client name.'); return; }
+      const dob = document.getElementById('newClientDOB').value;
       const address = document.getElementById('newClientAddress').value.trim();
       const phone = document.getElementById('newClientPhone').value.trim();
       const emergency = document.getElementById('newClientEmergency').value.trim();
       const services = document.getElementById('newClientServices').value;
-      const { error } = await db.from('clients').insert({ full_name: name, address: address || null, phone: phone || null, emergency_contact_name: emergency || null, care_notes: services });
+      const { error } = await db.from('clients').insert({ full_name: name, date_of_birth: dob || null, address: address || null, phone: phone || null, emergency_contact_name: emergency || null, care_notes: services });
       if (error) { alert('Error saving client: ' + error.message); return; }
       await loadClients();
       closeAddClientModal();
