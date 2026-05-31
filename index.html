@@ -1598,18 +1598,18 @@
           <div class="db-card">
             <div class="db-card-header"><span class="db-card-title">Profile</span></div>
             <div class="profile-card">
-              <div class="profile-avatar-lg">👩‍⚕️</div>
-              <div class="profile-info"><div class="profile-name">Maria Santos</div><div class="profile-role">Certified Nursing Aide (CNA) · Since Jan 2024</div></div>
-              <div class="profile-edit"><button class="db-btn db-btn-outline">Edit Profile</button></div>
+              <div class="profile-avatar-lg" id="cgProfileAvatar">👤</div>
+              <div class="profile-info"><div class="profile-name" id="cgProfileName">Loading...</div><div class="profile-role">Caregiver · PC Homecare</div></div>
             </div>
             <div class="db-form" style="border-top:1px solid #f0f0f0;">
               <div class="db-form-row">
-                <div class="db-form-group"><label>Full Name</label><input type="text" value="Maria Santos" /></div>
-                <div class="db-form-group"><label>Phone</label><input type="tel" value="(555) 887-2211" /></div>
+                <div class="db-form-group"><label>Full Name</label><input type="text" id="cgProfName" placeholder="Your full name" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"/></div>
+                <div class="db-form-group"><label>Phone</label><input type="tel" id="cgProfPhone" placeholder="703-555-0100" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"/></div>
               </div>
-              <div class="db-form-group"><label>Email</label><input type="email" value="maria.santos@prosperingcitizen.com" /></div>
-              <div class="db-form-group"><label>Emergency Contact</label><input type="text" value="Carlos Santos — (555) 887-2200" /></div>
-              <button class="db-btn db-btn-primary">Save Changes</button>
+              <div class="db-form-group"><label>Email</label><input type="email" id="cgProfEmail" placeholder="your@email.com" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"/></div>
+              <div class="db-form-group"><label>Home Address</label><input type="text" id="cgProfAddress" placeholder="Your home address" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"/></div>
+              <div id="cgProfMsg" style="display:none;padding:0.65rem 0.9rem;border-radius:8px;font-size:0.85rem;margin-bottom:0.75rem;"></div>
+              <button class="db-btn db-btn-primary" onclick="saveCaregiverProfile()">Save Changes</button>
             </div>
           </div>
         </div>
@@ -2663,6 +2663,14 @@
       const hour = new Date().getHours();
       const greet = (hour<12?'Good morning':hour<17?'Good afternoon':'Good evening') + ', ' + name.split(' ')[0] + '! 🌿';
       const av=document.getElementById('cgAvatar'); if(av) av.textContent=initials;
+      // Populate profile form
+      const pn=document.getElementById('cgProfName');if(pn)pn.value=name;
+      const pp=document.getElementById('cgProfPhone');if(pp)pp.value=profile?.phone||'';
+      const pe=document.getElementById('cgProfEmail');if(pe)pe.value=profile?.email||'';
+      const pad=document.getElementById('cgProfAddress');if(pad)pad.value=profile?.address||'';
+      const pa=document.getElementById('cgProfileAvatar');if(pa)pa.textContent=initials;
+      const profNm=document.getElementById('cgProfileName');if(profNm)profNm.textContent=name;
+
       const nm=document.getElementById('cgName');   if(nm) nm.textContent=name;
       const gr=document.getElementById('cgGreeting'); if(gr) gr.textContent=greet;
       const today=new Date().toISOString().slice(0,10);
@@ -2696,6 +2704,24 @@
       if(cgMsgList) cgMsgList.innerHTML=!msgs||msgs.length===0
         ? '<div style="padding:1rem;color:#888;">No messages yet.</div>'
         : msgs.map(m=>'<div style="padding:0.85rem 1rem;border-bottom:1px solid #f0f0f0;"><div style="display:flex;justify-content:space-between;"><strong style="font-size:0.88rem;">'+(m.subject||'Message')+'</strong><span style="font-size:0.75rem;color:#aaa;">'+new Date(m.created_at).toLocaleDateString()+'</span></div><div style="font-size:0.85rem;color:#555;margin-top:0.25rem;">'+m.body+'</div></div>').join('');
+    }
+
+    async function saveCaregiverProfile() {
+      if (!cgUserId) return;
+      const name    = document.getElementById('cgProfName')?.value.trim();
+      const phone   = document.getElementById('cgProfPhone')?.value.trim();
+      const email   = document.getElementById('cgProfEmail')?.value.trim();
+      const address = document.getElementById('cgProfAddress')?.value.trim();
+      const msg     = document.getElementById('cgProfMsg');
+      if (!name) { if(msg){msg.style.background='#f8d7da';msg.style.color='#721c24';msg.textContent='Name is required.';msg.style.display='block';} return; }
+      const { error } = await db.from('profiles').update({ full_name:name, phone:phone||null, email:email||null, address:address||null }).eq('id', cgUserId);
+      if (error) { if(msg){msg.style.background='#f8d7da';msg.style.color='#721c24';msg.textContent='Error: '+error.message;msg.style.display='block';} return; }
+      if(msg){msg.style.background='#d4edda';msg.style.color='#155724';msg.textContent='Profile saved successfully!';msg.style.display='block';}
+      const av=document.getElementById('cgAvatar');if(av)av.textContent=name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+      const nm=document.getElementById('cgName');if(nm)nm.textContent=name;
+      const pn=document.getElementById('cgProfileName');if(pn)pn.textContent=name;
+      const pa=document.getElementById('cgProfileAvatar');if(pa)pa.textContent=name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+      setTimeout(()=>{if(msg)msg.style.display='none';},3000);
     }
     // ── Edit Visit ──
     let editingVisitId = null;
