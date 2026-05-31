@@ -917,7 +917,7 @@
         <label>Password</label>
         <input type="password" id="loginPassword" placeholder="••••••••" />
       </div>
-      <div class="login-error" id="loginError">Incorrect password. Please try again.</div>
+      <div class="login-error" id="loginError">Incorrect email or password. Please try again.</div>
       <button class="login-submit" onclick="doLogin()">Sign In →</button>
     </div>
   </div>
@@ -3261,18 +3261,49 @@
     }
 
     async function doLogin() {
-      const pw = document.getElementById('loginPassword').value;
-      const err = document.getElementById('loginError');
-      if (pw !== 'PCManager2025!') { err.style.display = 'block'; return; }
+      const email = document.getElementById('loginEmail').value.trim();
+      const pw    = document.getElementById('loginPassword').value;
+      const err   = document.getElementById('loginError');
+      const btn   = document.querySelector('.login-submit');
+
       err.style.display = 'none';
-      if (currentRole === 'manager') {
-        await db.auth.signInWithPassword({ email: 'manager@pchomecareservices.com', password: 'PCManager2025!' });
+      if (!email || !pw) { err.textContent = 'Please enter your email and password.'; err.style.display = 'block'; return; }
+
+      if (btn) { btn.textContent = 'Signing in...'; btn.disabled = true; }
+
+      // Authenticate with Supabase
+      const { data: authData, error: authErr } = await db.auth.signInWithPassword({ email, password: pw });
+
+      if (btn) { btn.textContent = 'Sign In →'; btn.disabled = false; }
+
+      if (authErr) {
+        err.textContent = 'Incorrect email or password. Please try again.';
+        err.style.display = 'block';
+        return;
       }
+
+      // Fetch role from profiles
+      const { data: profile } = await db.from('profiles').select('role, full_name').eq('id', authData.user.id).single();
+      const role = profile?.role || 'caregiver';
+      const name = profile?.full_name || email;
+
+      // Update topbar name display
+      const avatarInitials = name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+      document.querySelectorAll('.db-avatar').forEach(el => el.textContent = avatarInitials);
+      document.querySelectorAll('.db-topbar-user span').forEach(el => { if (!el.classList.contains('db-topbar-role')) el.textContent = name; });
+
+      err.style.display = 'none';
       closeLogin();
+
       const dashMap = { manager:'managerDash', caregiver:'caregiverDash', client:'clientDash' };
-      document.getElementById(dashMap[currentRole]).classList.add('active');
+      const dash = dashMap[role] || 'caregiverDash';
+      document.getElementById(dash).classList.add('active');
       document.body.style.overflow = 'hidden';
-      if (currentRole === 'manager') { loadDashboard(); loadClients(); loadCaregivers(); loadVisits(); loadAlerts(); loadBilling(); loadCompliance(); loadReports(); loadMessages(); startRealtime(); }
+
+      if (role === 'manager') {
+        loadDashboard(); loadClients(); loadCaregivers(); loadVisits();
+        loadAlerts(); loadBilling(); loadCompliance(); loadReports(); loadMessages(); startRealtime();
+      }
     }
 
     document.getElementById('loginPassword').addEventListener('keydown', function(e) {
