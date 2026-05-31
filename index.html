@@ -1886,6 +1886,45 @@
     </div>
   </div>
 
+  <!-- Edit Visit Modal -->
+  <div id="editVisitModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:16px;padding:2rem;width:100%;max-width:540px;margin:1rem;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <h3 style="margin:0;color:#0D2B1F;font-size:1.2rem;">📅 Edit Visit</h3>
+        <button onclick="closeEditVisit()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">✕</button>
+      </div>
+      <div style="background:#f8f9fa;border-radius:10px;padding:0.75rem 1rem;margin-bottom:1.25rem;font-size:0.85rem;color:#555;" id="editVisitInfo"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="db-form-group"><label>Client</label><select id="evClientSel" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.95rem;box-sizing:border-box;"></select></div>
+        <div class="db-form-group"><label>Caregiver</label><select id="evCaregiverSel" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.95rem;box-sizing:border-box;"></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="db-form-group"><label>Date</label><input type="date" id="evDate" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.95rem;box-sizing:border-box;"></div>
+        <div class="db-form-group"><label>Start Time</label><input type="time" id="evTime" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.95rem;box-sizing:border-box;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+        <div class="db-form-group"><label>Hours</label><input type="number" id="evHours" min="0" max="24" placeholder="hrs" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.95rem;box-sizing:border-box;"></div>
+        <div class="db-form-group"><label>Minutes</label><input type="number" id="evMins" min="0" max="59" placeholder="min" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.95rem;box-sizing:border-box;"></div>
+        <div class="db-form-group"><label>Status</label><select id="evStatus" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.95rem;box-sizing:border-box;">
+          <option value="scheduled">Scheduled</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select></div>
+      </div>
+      <div class="db-form-group"><label>Service Type</label><select id="evService" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:0.95rem;box-sizing:border-box;">
+        <option>Personal Care</option><option>Companionship</option><option>Dementia Care</option>
+        <option>Meal Preparation</option><option>Post-Hospital Care</option><option>Live-In Care</option>
+      </select></div>
+      <div id="evError" style="display:none;padding:0.6rem 0.9rem;background:#f8d7da;color:#721c24;border-radius:8px;font-size:0.85rem;margin-bottom:0.75rem;"></div>
+      <div style="display:flex;gap:0.75rem;margin-top:1rem;">
+        <button onclick="deleteVisit()" style="padding:0.85rem 1rem;border:1.5px solid #dc3545;border-radius:10px;background:white;color:#dc3545;cursor:pointer;font-size:0.9rem;font-weight:600;">🗑 Delete</button>
+        <button onclick="closeEditVisit()" style="flex:1;padding:0.85rem;border:1.5px solid #ccc;border-radius:10px;background:white;cursor:pointer;font-size:1rem;">Cancel</button>
+        <button id="evSaveBtn" onclick="saveEditVisit()" style="flex:2;padding:0.85rem;border:none;border-radius:10px;background:#0D2B1F;color:#C9A84C;font-weight:700;cursor:pointer;font-size:1rem;">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Compose Message Modal (body-level so it's never hidden by panel display:none) -->
   <div id="composeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center;">
     <div style="background:white;border-radius:16px;padding:2rem;width:100%;max-width:520px;margin:1rem;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
@@ -2583,7 +2622,9 @@
             const totalMins = Math.round((v.duration_hours || 1) * 60);
             const dispHrs = Math.floor(totalMins/60), dispMins = totalMins%60;
             const durStr = dispHrs > 0 && dispMins > 0 ? dispHrs+'h '+dispMins+'m' : dispHrs > 0 ? dispHrs+'h' : dispMins+'m';
-            cellContent += '<div style="background:' + c.bg + ';border-left:3px solid ' + c.border + ';border-radius:4px;padding:0.2rem 0.4rem;margin:1px 2px;font-size:0.72rem;color:' + c.text + ';overflow:hidden;cursor:default;" title="' + (v.clients?.full_name||'') + ' → ' + (v.profiles?.full_name||'') + ' · ' + v.service_type + ' · ' + durStr + '"><strong>' + (v.clients?.full_name||'?').split(' ')[0] + '</strong><br>' + fmtTime(v.start_time) + ' · ' + durStr + '</div>';
+            const opacity = v.status === 'cancelled' ? '0.45' : '1';
+            const strike = v.status === 'cancelled' ? 'text-decoration:line-through;' : '';
+            cellContent += '<div onclick="openEditVisit(' + JSON.stringify(v).replace(/"/g,'&quot;') + ')" style="background:' + c.bg + ';border-left:3px solid ' + c.border + ';border-radius:4px;padding:0.2rem 0.4rem;margin:1px 2px;font-size:0.72rem;color:' + c.text + ';overflow:hidden;cursor:pointer;opacity:' + opacity + ';' + strike + '" title="Click to edit"><strong>' + (v.clients?.full_name||'?').split(' ')[0] + '</strong><br>' + fmtTime(v.start_time) + ' · ' + durStr + '</div>';
           });
           html += '<div style="border-right:1px solid #e8eaed;border-bottom:1px solid #e8eaed;min-height:44px;vertical-align:top;">' + (cellContent || '') + '</div>';
         });
@@ -2611,6 +2652,106 @@
 
       calVisitsData = data || [];
       renderCalendar();
+    }
+
+    // ── Edit Visit ──
+    let editingVisitId = null;
+
+    async function openEditVisit(v) {
+      editingVisitId = v.id;
+
+      // Info bar
+      const info = document.getElementById('editVisitInfo');
+      if (info) info.textContent = '📅 ' + v.visit_date + ' at ' + fmtTime(v.start_time) + '  •  ' + (v.clients?.full_name || 'Unknown client') + '  →  ' + (v.profiles?.full_name || 'Unassigned');
+
+      // Populate client dropdown
+      const cSel = document.getElementById('evClientSel');
+      if (cSel) {
+        cSel.innerHTML = '<option value="">— Select Client —</option>';
+        (await db.from('clients').select('id,full_name').order('full_name')).data?.forEach(c => {
+          cSel.innerHTML += '<option value="' + c.id + '"' + (c.id === v.client_id ? ' selected' : '') + '>' + c.full_name + '</option>';
+        });
+      }
+
+      // Populate caregiver dropdown
+      const cgSel = document.getElementById('evCaregiverSel');
+      if (cgSel) {
+        cgSel.innerHTML = '<option value="">— Unassigned —</option>';
+        (await db.from('profiles').select('id,full_name').eq('role','caregiver').order('full_name')).data?.forEach(cg => {
+          cgSel.innerHTML += '<option value="' + cg.id + '"' + (cg.id === v.caregiver_id ? ' selected' : '') + '>' + cg.full_name + '</option>';
+        });
+      }
+
+      // Populate fields
+      const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+      setVal('evDate', v.visit_date);
+      setVal('evTime', v.start_time ? v.start_time.slice(0,5) : '');
+      setVal('evService', v.service_type || 'Personal Care');
+      setVal('evStatus', v.status || 'scheduled');
+
+      const totalMins = Math.round((parseFloat(v.duration_hours) || 0) * 60);
+      setVal('evHours', Math.floor(totalMins / 60));
+      setVal('evMins', totalMins % 60);
+
+      const errEl = document.getElementById('evError');
+      if (errEl) errEl.style.display = 'none';
+
+      document.getElementById('editVisitModal').style.display = 'flex';
+    }
+
+    function closeEditVisit() {
+      document.getElementById('editVisitModal').style.display = 'none';
+      editingVisitId = null;
+    }
+
+    async function saveEditVisit() {
+      const saveBtn = document.getElementById('evSaveBtn');
+      const errEl = document.getElementById('evError');
+      if (errEl) errEl.style.display = 'none';
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+
+      const clientId   = document.getElementById('evClientSel').value;
+      const caregiverId = document.getElementById('evCaregiverSel').value;
+      const date       = document.getElementById('evDate').value;
+      const time       = document.getElementById('evTime').value;
+      const hrs        = parseInt(document.getElementById('evHours').value) || 0;
+      const mins       = parseInt(document.getElementById('evMins').value) || 0;
+      const service    = document.getElementById('evService').value;
+      const status     = document.getElementById('evStatus').value;
+
+      if (!date || !time) {
+        if (errEl) { errEl.textContent = 'Date and time are required.'; errEl.style.display = 'block'; }
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Changes'; }
+        return;
+      }
+
+      const durationDecimal = hrs + (mins / 60);
+      const { error } = await db.from('visits').update({
+        client_id:      clientId || null,
+        caregiver_id:   caregiverId || null,
+        visit_date:     date,
+        start_time:     time,
+        duration_hours: durationDecimal,
+        service_type:   service,
+        status:         status,
+      }).eq('id', editingVisitId);
+
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Changes'; }
+
+      if (error) {
+        if (errEl) { errEl.textContent = 'Error saving: ' + error.message; errEl.style.display = 'block'; }
+        return;
+      }
+
+      closeEditVisit();
+      await loadVisits();
+    }
+
+    async function deleteVisit() {
+      if (!confirm('Delete this visit permanently?')) return;
+      await db.from('visits').delete().eq('id', editingVisitId);
+      closeEditVisit();
+      await loadVisits();
     }
 
     // ── Edit Client ──
