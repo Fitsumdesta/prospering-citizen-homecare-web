@@ -3159,11 +3159,25 @@
       // Group by thread key
       const threads = {};
       msgs.forEach(m => {
-        // For messages FROM caregivers, use sender_name as the thread key so manager sees caregiver name
-        const threadName = !m.from_manager && m.sender_name ? m.sender_name : (m.recipient_name || 'Unknown');
+        let threadName;
+        if (!m.from_manager) {
+          // Message FROM a caregiver — identify by sender_name, or extract from subject
+          if (m.sender_name) {
+            threadName = m.sender_name;
+          } else if (m.subject && m.subject.startsWith('Message from ')) {
+            threadName = m.subject.replace('Message from ', '').trim();
+          } else if (m.recipient_name && m.recipient_name !== 'PC Homecare Manager') {
+            threadName = m.recipient_name;
+          } else {
+            threadName = 'Caregiver';
+          }
+        } else {
+          // Message FROM manager TO someone — thread by recipient name
+          threadName = m.recipient_name || 'Unknown';
+        }
         const key = threadName;
         const type = m.recipient_type || 'caregiver';
-        if (!threads[key]) threads[key] = { key, name: threadName, type, msgs:[], unread:0 };
+        if (!threads[key]) threads[key] = { key, name: threadName, type, msgs: [], unread: 0 };
         threads[key].msgs.push(m);
         if (!m.read && !m.from_manager) threads[key].unread++;
       });
