@@ -1545,9 +1545,18 @@
           </div>
         </div>
         <div class="db-panel" id="c-cmessages">
-          <div class="db-page-title">Messages</div><div class="db-page-sub">Communicate with your supervisor and the office team.</div>
+          <div class="db-page-title">Messages</div><div class="db-page-sub">Send and receive messages from your supervisor.</div>
+          <div class="db-card" style="margin-bottom:1.25rem;">
+            <div class="db-card-header"><span class="db-card-title">Send Message to Manager</span></div>
+            <div class="db-form" style="padding-top:0.5rem;">
+              <div class="db-form-group"><label>Subject</label><input type="text" id="cgMsgSubject" placeholder="e.g. Schedule question" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+              <div class="db-form-group"><label>Message</label><textarea id="cgMsgBody" rows="4" placeholder="Type your message here..." style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;resize:vertical;font-family:inherit;"></textarea></div>
+              <div id="cgMsgSendStatus" style="display:none;padding:0.6rem 0.9rem;border-radius:8px;font-size:0.85rem;margin-bottom:0.75rem;"></div>
+              <button id="cgMsgSendBtn" onclick="sendCaregiverMessage()" style="padding:0.85rem 2rem;border:none;border-radius:10px;background:#0D2B1F;color:#C9A84C;font-weight:700;cursor:pointer;font-size:1rem;">Send Message</button>
+            </div>
+          </div>
           <div class="db-card">
-            <div class="db-card-header"><span class="db-card-title">Inbox</span><button class="db-btn db-btn-primary" style="font-size:0.78rem;padding:0.4rem 0.9rem;">+ New Message</button></div>
+            <div class="db-card-header"><span class="db-card-title">Inbox</span><button class="db-btn db-btn-outline" style="font-size:0.78rem;padding:0.4rem 0.9rem;" onclick="loadCaregiverMessages(cgUserId)">&#8635; Refresh</button></div>
             <div id="cgMsgList"><div style="padding:1rem;color:#888;font-size:0.85rem;">Loading messages...</div></div>
           </div>
         </div>
@@ -2699,11 +2708,7 @@
         : weekV.map(v=>{const isT=v.visit_date===today;const dot=v.status==='completed'?'green':v.status==='cancelled'?'red':'gold';const tm=Math.round((parseFloat(v.duration_hours)||0)*60);const h=Math.floor(tm/60),m=tm%60;const dur=h>0&&m>0?h+'h '+m+'m':h>0?h+'h':m+'m';return '<tr'+(isT?' style="background:#f0f8f4;"':'')+'>'+'<td>'+(isT?'<strong>Today</strong>':v.visit_date)+'</td><td>'+fmtTime(v.start_time)+'</td><td>'+(v.clients?.full_name||'—')+'</td><td>'+(v.service_type||'—')+'</td><td>'+dur+'</td><td><span class="badge badge-'+dot+'">'+(v.status||'scheduled')+'</span></td></tr>';}).join('');
       const evvSel=document.getElementById('evvClient');
       if(evvSel&&todayV.length>0) evvSel.innerHTML=todayV.map(v=>'<option value="'+(v.client_id||'')+'">'+(v.clients?.full_name||'Client')+'</option>').join('');
-      const {data:msgs}=await db.from('manager_messages').select('*').eq('recipient_name',name).order('created_at',{ascending:false}).limit(20);
-      const cgMsgList=document.getElementById('cgMsgList');
-      if(cgMsgList) cgMsgList.innerHTML=!msgs||msgs.length===0
-        ? '<div style="padding:1rem;color:#888;">No messages yet.</div>'
-        : msgs.map(m=>'<div style="padding:0.85rem 1rem;border-bottom:1px solid #f0f0f0;"><div style="display:flex;justify-content:space-between;"><strong style="font-size:0.88rem;">'+(m.subject||'Message')+'</strong><span style="font-size:0.75rem;color:#aaa;">'+new Date(m.created_at).toLocaleDateString()+'</span></div><div style="font-size:0.85rem;color:#555;margin-top:0.25rem;">'+m.body+'</div></div>').join('');
+      loadCaregiverMessages(userId);
     }
 
     async function saveCaregiverProfile() {
@@ -2723,6 +2728,62 @@
       const pa=document.getElementById('cgProfileAvatar');if(pa)pa.textContent=name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
       setTimeout(()=>{if(msg)msg.style.display='none';},3000);
     }
+
+    async function sendCaregiverMessage() {
+      const subject = document.getElementById('cgMsgSubject')?.value.trim();
+      const body    = document.getElementById('cgMsgBody')?.value.trim();
+      const status  = document.getElementById('cgMsgSendStatus');
+      const btn     = document.getElementById('cgMsgSendBtn');
+      if (status) status.style.display = 'none';
+      if (!body) {
+        if (status) { status.textContent = 'Please enter a message.'; status.style.background = '#f8d7da'; status.style.color = '#721c24'; status.style.display = 'block'; }
+        return;
+      }
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+      const cgName = document.getElementById('cgName')?.textContent || 'Caregiver';
+      const { error } = await db.from('manager_messages').insert({
+        recipient_name: 'PC Homecare Manager',
+        recipient_type: 'manager',
+        from_manager: false,
+        subject: subject || ('Message from ' + cgName),
+        body: body,
+        read: false,
+      });
+      if (btn) { btn.disabled = false; btn.textContent = 'Send Message'; }
+      if (error) {
+        if (status) { status.textContent = 'Failed to send: ' + error.message; status.style.background = '#f8d7da'; status.style.color = '#721c24'; status.style.display = 'block'; }
+        return;
+      }
+      if (status) { status.textContent = 'Message sent to your manager!'; status.style.background = '#d4edda'; status.style.color = '#155724'; status.style.display = 'block'; }
+      document.getElementById('cgMsgSubject').value = '';
+      document.getElementById('cgMsgBody').value = '';
+      setTimeout(() => { if (status) status.style.display = 'none'; }, 3000);
+    }
+
+    async function loadCaregiverMessages(userId) {
+      const cgName = document.getElementById('cgName')?.textContent || '';
+      const { data: msgs } = await db.from('manager_messages')
+        .select('*').or('recipient_name.eq.PC Homecare Manager,recipient_name.eq.' + cgName)
+        .order('created_at', { ascending: false }).limit(20);
+      const inbox = document.getElementById('cgMsgList');
+      if (!inbox) return;
+      if (!msgs || msgs.length === 0) {
+        inbox.innerHTML = '<div style="padding:1rem;color:#888;font-size:0.85rem;">No messages yet. Send one above!</div>';
+        return;
+      }
+      inbox.innerHTML = msgs.map(m => {
+        const isFromMe = !m.from_manager;
+        const bg = isFromMe ? '#f0f4f0' : '#fff';
+        const label = isFromMe ? 'You' : 'Manager';
+        const t = new Date(m.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+        return '<div style="padding:0.85rem 1rem;border-bottom:1px solid #f0f0f0;background:'+bg+';">'
+          +'<div style="display:flex;justify-content:space-between;margin-bottom:0.25rem;">'
+          +'<strong style="font-size:0.85rem;color:#333;">'+label+': '+(m.subject||'Message')+'</strong>'
+          +'<span style="font-size:0.72rem;color:#aaa;">'+t+'</span></div>'
+          +'<div style="font-size:0.85rem;color:#555;">'+m.body+'</div></div>';
+      }).join('');
+    }
+
     // ── Edit Visit ──
     let editingVisitId = null;
 
