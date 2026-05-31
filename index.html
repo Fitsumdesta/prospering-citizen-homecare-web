@@ -1044,7 +1044,7 @@
                 <button onclick="closeAddCaregiverModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">✕</button>
               </div>
               <div class="db-form-group"><label>Full Name *</label><input type="text" id="newCgName" placeholder="e.g. Angela Williams" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
-              <div class="db-form-group"><label>Email Address *</label><input type="email" id="newCgEmail" placeholder="caregiver@email.com" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
+              <div class="db-form-group"><label>Email Address * <span style="font-size:0.78rem;color:#e74c3c;">(required — caregiver uses this to log in)</span></label><input type="email" id="newCgEmail" placeholder="caregiver@gmail.com" required style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                 <div class="db-form-group"><label>Phone</label><input type="tel" id="newCgPhone" placeholder="703-555-0100" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;"></div>
                 <div class="db-form-group"><label>Certification</label><select id="newCgCert" style="width:100%;padding:0.75rem;border:1.5px solid #e0d5c0;border-radius:10px;font-size:1rem;box-sizing:border-box;">
@@ -3213,6 +3213,7 @@
       const name = document.getElementById('newCgName').value.trim();
       if (!name) { alert('Please enter the caregiver name.'); return; }
       const email = document.getElementById('newCgEmail').value.trim();
+      if (!email) { alert('Email address is required. The caregiver uses this to log into the mobile app.'); return; }
       const phone = document.getElementById('newCgPhone').value.trim();
       const cert = document.getElementById('newCgCert').value;
       const address = document.getElementById('newCgAddress').value.trim();
@@ -3220,13 +3221,13 @@
         const res = await fetch('/api/add-caregiver', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ full_name: name, email: email || null, phone: phone || null, certification: cert, address: address || null }),
+          body: JSON.stringify({ full_name: name, email, phone: phone || null, certification: cert, address: address || null }),
         });
         const data = await res.json();
-        if (!res.ok) { alert('Error saving caregiver: ' + (data.error || 'Unknown error')); return; }
+        if (!res.ok) { alert('Error: ' + (data.error || 'Unknown error')); return; }
         await loadCaregivers();
         closeAddCaregiverModal();
-        alert('Caregiver "' + name + '" added!\n\nLogin credentials:\nEmail: ' + data.email + '\nTemp Password: ' + data.temp_password + '\n\nShare these with the caregiver so they can log into the mobile app.');
+        alert('✅ Caregiver "' + name + '" created!\n\n📧 Email: ' + data.email + '\n🔑 Password: ' + data.temp_password + '\n\nThey can log into the PC Homecare mobile app with these credentials right away.');
       } catch (err) {
         alert('Error: ' + err.message);
       }
