@@ -3261,7 +3261,7 @@
     }
 
     async function doLogin() {
-      const email = document.getElementById('loginEmail').value.trim();
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
       const pw    = document.getElementById('loginPassword').value;
       const err   = document.getElementById('loginError');
       const btn   = document.querySelector('.login-submit');
