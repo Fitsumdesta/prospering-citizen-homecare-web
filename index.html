@@ -3526,20 +3526,20 @@
         return;
       }
 
-      // Fetch role from profiles
-      const { data: profile } = await db.from('profiles').select('role, full_name').eq('id', authData.user.id).single();
-      let role = profile?.role || null;
-      let name = profile?.full_name || email;
-
-      // If no profile role, check clients table by email (client login)
+      // Check clients table FIRST — client email always wins over profile role
       let clientRecord = null;
-      if (!role) {
-        const { data: cl } = await db.from('clients').select('*').eq('email', authData.user.email).single();
-        if (cl) { role = 'client'; name = cl.full_name || email; clientRecord = cl;
-          // Link user_id if not already set
-          if (!cl.user_id) await db.from('clients').update({ user_id: authData.user.id }).eq('id', cl.id);
-        } else { role = 'caregiver'; }
+      const { data: cl } = await db.from('clients').select('*').eq('email', authData.user.email.toLowerCase()).maybeSingle();
+      if (cl) {
+        clientRecord = cl;
+        if (!cl.user_id) await db.from('clients').update({ user_id: authData.user.id }).eq('id', cl.id);
       }
+
+      // Fetch profile role as fallback
+      const { data: profile } = await db.from('profiles').select('role, full_name').eq('id', authData.user.id).maybeSingle();
+
+      // Client check wins, then profile role, then default to caregiver
+      let role = clientRecord ? 'client' : (profile?.role || 'caregiver');
+      let name = clientRecord ? (clientRecord.full_name || email) : (profile?.full_name || email);
 
       // Update topbar name display
       const avatarInitials = name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
