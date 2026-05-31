@@ -2742,10 +2742,11 @@
       if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
       const cgName = document.getElementById('cgName')?.textContent || 'Caregiver';
       const { error } = await db.from('manager_messages').insert({
-        recipient_name: 'PC Homecare Manager',
+        recipient_name: cgName,
         recipient_type: 'manager',
+        sender_name: cgName,
         from_manager: false,
-        subject: subject || ('Message from ' + cgName),
+        subject: subject || 'Message from ' + cgName,
         body: body,
         read: false,
       });
@@ -2763,7 +2764,7 @@
     async function loadCaregiverMessages(userId) {
       const cgName = document.getElementById('cgName')?.textContent || '';
       const { data: msgs } = await db.from('manager_messages')
-        .select('*').or('recipient_name.eq.PC Homecare Manager,recipient_name.eq.' + cgName)
+        .select('*').or('sender_name.eq.' + cgName + ',recipient_name.eq.' + cgName)
         .order('created_at', { ascending: false }).limit(20);
       const inbox = document.getElementById('cgMsgList');
       if (!inbox) return;
@@ -3158,12 +3159,13 @@
       // Group by thread key
       const threads = {};
       msgs.forEach(m => {
-        const key = m.recipient_name || m.to_id || m.to_client_id || 'unknown';
-        const name = m.recipient_name || 'Unknown';
+        // For messages FROM caregivers, use sender_name as the thread key so manager sees caregiver name
+        const threadName = !m.from_manager && m.sender_name ? m.sender_name : (m.recipient_name || 'Unknown');
+        const key = threadName;
         const type = m.recipient_type || 'caregiver';
-        if (!threads[key]) threads[key] = { key, name, type, msgs:[], unread:0, threadId: m.to_id||m.to_client_id };
+        if (!threads[key]) threads[key] = { key, name: threadName, type, msgs:[], unread:0 };
         threads[key].msgs.push(m);
-        if (!m.read) threads[key].unread++;
+        if (!m.read && !m.from_manager) threads[key].unread++;
       });
 
       inbox.innerHTML = Object.values(threads).map(t => {
